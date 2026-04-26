@@ -1,0 +1,4616 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#000510" />
+<title>J.A.R.V.I.S Mk III — Universal AI Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --jarvis-cyan: #00e5ff;
+  --jarvis-cyan-dim: #008ba3;
+  --jarvis-cyan-glow: rgba(0, 229, 255, 0.6);
+  --jarvis-amber: #ff9d00;
+  --jarvis-red: #ff2d2d;
+  --jarvis-gold: #ffb84d;
+  --jarvis-success: #00ff88;
+  --jarvis-warning: #ffcc00;
+
+  --bg-void: #000308;
+  --bg-deep: #000a14;
+  --bg-panel: rgba(0, 30, 50, 0.65);
+  --bg-panel-solid: #001624;
+  --border-thin: rgba(0, 229, 255, 0.2);
+  --border-bright: rgba(0, 229, 255, 0.6);
+
+  --txt-white: #e0f7ff;
+  --txt-cyan: #80e9ff;
+  --txt-dim: #4d8ba0;
+  --txt-fade: #2d5666;
+
+  --display: 'Orbitron', sans-serif;
+  --body: 'Rajdhani', 'Noto Sans KR', sans-serif;
+  --mono: 'Share Tech Mono', monospace;
+  --kr: 'Noto Sans KR', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  height: 100%;
+  background: var(--bg-void);
+  color: var(--txt-white);
+  font-family: var(--body);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* ─────────────────────────────────────────────────── */
+/* 우주/홀로그램 배경                                    */
+/* ─────────────────────────────────────────────────── */
+body {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(0, 100, 150, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, rgba(255, 100, 0, 0.05) 0%, transparent 60%),
+    radial-gradient(ellipse at 0% 80%, rgba(0, 50, 100, 0.1) 0%, transparent 50%),
+    var(--bg-void);
+  min-height: 100vh;
+  min-height: 100dvh;
+  position: relative;
+}
+
+/* 그리드 배경 (홀로그램 느낌) */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 229, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: 0;
+  animation: grid-drift 30s linear infinite;
+}
+@keyframes grid-drift {
+  from { background-position: 0 0; }
+  to { background-position: 32px 32px; }
+}
+
+/* 스캔라인 효과 */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    rgba(0, 229, 255, 0.012) 1px,
+    transparent 2px,
+    transparent 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ─────────────────────────────────────────────────── */
+/* 메인 레이아웃                                         */
+/* ─────────────────────────────────────────────────── */
+#app {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  max-width: 100%;
+}
+
+@media (min-width: 768px) {
+  #app {
+    max-width: 480px;
+    margin: 0 auto;
+    border-left: 1px solid var(--border-thin);
+    border-right: 1px solid var(--border-thin);
+  }
+}
+
+/* ─────────────────────────────────────────────────── */
+/* 헤더 (HUD 스타일)                                    */
+/* ─────────────────────────────────────────────────── */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--border-thin);
+  position: relative;
+  flex-shrink: 0;
+}
+header::before {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 40%;
+  height: 1px;
+  background: linear-gradient(90deg, var(--jarvis-cyan), transparent);
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.logo-mark {
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 4px;
+  color: var(--txt-white);
+  text-shadow:
+    0 0 8px var(--jarvis-cyan-glow),
+    0 0 18px rgba(0, 229, 255, 0.3);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.logo-mark::before {
+  content: '◆';
+  color: var(--jarvis-cyan);
+  font-size: 11px;
+  opacity: 0.8;
+}
+.logo-tag {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 2.5px;
+  color: var(--jarvis-cyan-dim);
+  text-transform: uppercase;
+}
+
+.hud-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+.status-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: var(--jarvis-cyan);
+}
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--jarvis-cyan);
+  box-shadow: 0 0 8px var(--jarvis-cyan);
+  animation: status-blink 1.4s ease-in-out infinite;
+}
+@keyframes status-blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+.status-time {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--txt-dim);
+  letter-spacing: 1px;
+}
+
+/* ─────────────────────────────────────────────────── */
+/* 환경 셀렉터 미니 바                                   */
+/* ─────────────────────────────────────────────────── */
+.env-mini {
+  margin: 8px 14px 0;
+  padding: 8px 12px;
+  background: linear-gradient(90deg,
+    rgba(0, 229, 255, 0.08) 0%,
+    rgba(0, 229, 255, 0.02) 50%,
+    rgba(255, 157, 0, 0.04) 100%);
+  border: 1px solid var(--border-thin);
+  border-left: 2px solid var(--jarvis-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.env-mini:active { transform: scale(0.98); }
+.env-mini-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--jarvis-cyan);
+  letter-spacing: 1.5px;
+}
+.env-mini-summary {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--txt-cyan);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* ─────────────────────────────────────────────────── */
+/* 메인 시각화 — 자비스 코어 (회전 링 + 점)              */
+/* ─────────────────────────────────────────────────── */
+.core-container {
+  flex: 0 0 auto;
+  position: relative;
+  height: clamp(220px, 38vh, 320px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* 외곽 회전 링 */
+.core-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid var(--border-thin);
+  pointer-events: none;
+}
+.core-ring.r1 {
+  width: clamp(180px, 50vw, 260px);
+  height: clamp(180px, 50vw, 260px);
+  border-style: dashed;
+  animation: ring-rotate 28s linear infinite;
+}
+.core-ring.r2 {
+  width: clamp(220px, 60vw, 320px);
+  height: clamp(220px, 60vw, 320px);
+  border-color: rgba(0, 229, 255, 0.1);
+  animation: ring-rotate 60s linear infinite reverse;
+}
+.core-ring.r3 {
+  width: clamp(140px, 40vw, 200px);
+  height: clamp(140px, 40vw, 200px);
+  border-color: rgba(0, 229, 255, 0.3);
+  animation: ring-rotate 16s linear infinite;
+}
+.core-ring.r1::before,
+.core-ring.r1::after {
+  content: '';
+  position: absolute;
+  width: 8px; height: 8px;
+  background: var(--jarvis-cyan);
+  border-radius: 50%;
+  box-shadow: 0 0 12px var(--jarvis-cyan);
+}
+.core-ring.r1::before { top: -4px; left: 50%; transform: translateX(-50%); }
+.core-ring.r1::after { bottom: -4px; left: 50%; transform: translateX(-50%); }
+
+@keyframes ring-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 코어 중앙 — 7개 점 */
+.core-dots {
+  position: relative;
+  display: flex;
+  gap: clamp(12px, 4vw, 18px);
+  align-items: center;
+  z-index: 5;
+}
+.core-dot {
+  width: clamp(10px, 3vw, 14px);
+  height: clamp(10px, 3vw, 14px);
+  border-radius: 50%;
+  background: var(--jarvis-cyan);
+  box-shadow:
+    0 0 12px var(--jarvis-cyan),
+    0 0 28px rgba(0, 229, 255, 0.5),
+    0 0 50px rgba(0, 229, 255, 0.2);
+  transition: all 0.2s;
+}
+
+/* 상태별 도트 애니메이션 */
+.state-idle .core-dot { animation: idle-pulse 2.2s ease-in-out infinite; opacity: 0.6; }
+.state-idle .core-dot:nth-child(1) { animation-delay: 0s; }
+.state-idle .core-dot:nth-child(2) { animation-delay: 0.1s; }
+.state-idle .core-dot:nth-child(3) { animation-delay: 0.2s; }
+.state-idle .core-dot:nth-child(4) { animation-delay: 0.3s; }
+.state-idle .core-dot:nth-child(5) { animation-delay: 0.4s; }
+.state-idle .core-dot:nth-child(6) { animation-delay: 0.5s; }
+.state-idle .core-dot:nth-child(7) { animation-delay: 0.6s; }
+@keyframes idle-pulse {
+  0%, 100% { transform: scale(0.85); opacity: 0.5; }
+  50% { transform: scale(1.05); opacity: 0.95; }
+}
+
+.state-listening .core-dot { animation: listen-wave 0.55s ease-in-out infinite; }
+.state-listening .core-dot:nth-child(1) { animation-delay: 0s; }
+.state-listening .core-dot:nth-child(2) { animation-delay: 0.06s; }
+.state-listening .core-dot:nth-child(3) { animation-delay: 0.12s; }
+.state-listening .core-dot:nth-child(4) { animation-delay: 0.18s; }
+.state-listening .core-dot:nth-child(5) { animation-delay: 0.24s; }
+.state-listening .core-dot:nth-child(6) { animation-delay: 0.30s; }
+.state-listening .core-dot:nth-child(7) { animation-delay: 0.36s; }
+@keyframes listen-wave {
+  0%, 100% { transform: translateY(0) scaleY(0.8); }
+  50% { transform: translateY(-22px) scaleY(1.4); }
+}
+
+.state-thinking .core-dot { animation: think-orbit 1.4s ease-in-out infinite; opacity: 0.8; }
+.state-thinking .core-dot:nth-child(1) { animation-delay: 0s; }
+.state-thinking .core-dot:nth-child(2) { animation-delay: 0.18s; }
+.state-thinking .core-dot:nth-child(3) { animation-delay: 0.36s; }
+.state-thinking .core-dot:nth-child(4) { animation-delay: 0.54s; }
+.state-thinking .core-dot:nth-child(5) { animation-delay: 0.72s; }
+.state-thinking .core-dot:nth-child(6) { animation-delay: 0.90s; }
+.state-thinking .core-dot:nth-child(7) { animation-delay: 1.08s; }
+@keyframes think-orbit {
+  0%, 100% { transform: scale(0.5); opacity: 0.3; }
+  50% { transform: scale(1.4); opacity: 1; }
+}
+
+.state-speaking .core-dot {
+  background: var(--jarvis-amber);
+  box-shadow: 0 0 14px var(--jarvis-amber), 0 0 30px rgba(255, 157, 0, 0.5);
+  animation: speak-bounce 0.4s ease-in-out infinite;
+}
+.state-speaking .core-dot:nth-child(1) { animation-delay: 0s; }
+.state-speaking .core-dot:nth-child(2) { animation-delay: 0.05s; }
+.state-speaking .core-dot:nth-child(3) { animation-delay: 0.10s; }
+.state-speaking .core-dot:nth-child(4) { animation-delay: 0.15s; }
+.state-speaking .core-dot:nth-child(5) { animation-delay: 0.20s; }
+.state-speaking .core-dot:nth-child(6) { animation-delay: 0.25s; }
+.state-speaking .core-dot:nth-child(7) { animation-delay: 0.30s; }
+@keyframes speak-bounce {
+  0%, 100% { transform: translateY(0) scale(0.95); }
+  50% { transform: translateY(-12px) scale(1.15); }
+}
+
+.state-error .core-dot {
+  background: var(--jarvis-red);
+  box-shadow: 0 0 14px var(--jarvis-red), 0 0 30px rgba(255, 45, 45, 0.5);
+  animation: error-shake 0.3s ease-in-out infinite;
+}
+@keyframes error-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+.state-healing .core-dot {
+  background: var(--jarvis-gold);
+  box-shadow: 0 0 14px var(--jarvis-gold), 0 0 30px rgba(255, 184, 77, 0.5);
+  animation: heal-rotate 1s ease-in-out infinite;
+}
+@keyframes heal-rotate {
+  0%, 100% { transform: rotate(0) scale(0.9); }
+  50% { transform: rotate(180deg) scale(1.15); }
+}
+
+/* 코너 브래킷 (HUD 느낌) */
+.hud-bracket {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--jarvis-cyan);
+  pointer-events: none;
+  opacity: 0.8;
+}
+.hud-bracket.tl { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+.hud-bracket.tr { top: 8px; right: 8px; border-left: none; border-bottom: none; }
+.hud-bracket.bl { bottom: 8px; left: 8px; border-right: none; border-top: none; }
+.hud-bracket.br { bottom: 8px; right: 8px; border-left: none; border-top: none; }
+
+/* 상태 텍스트 (코어 위쪽) */
+.core-state-text {
+  position: absolute;
+  top: 18px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--jarvis-cyan);
+  text-transform: uppercase;
+  z-index: 6;
+  pointer-events: none;
+}
+
+/* 4단계 파이프라인 표시 (코어 아래) */
+.pipeline {
+  position: absolute;
+  bottom: 14px;
+  display: flex;
+  gap: 4px;
+  z-index: 6;
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 1px;
+}
+.pipeline-step {
+  padding: 3px 8px;
+  border: 1px solid var(--border-thin);
+  color: var(--txt-fade);
+  background: rgba(0, 0, 0, 0.4);
+  transition: all 0.3s;
+}
+.pipeline-step.active {
+  border-color: var(--jarvis-cyan);
+  color: var(--jarvis-cyan);
+  background: rgba(0, 229, 255, 0.1);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+}
+.pipeline-step.done {
+  border-color: var(--jarvis-success);
+  color: var(--jarvis-success);
+}
+
+/* ─────────────────────────────────────────────────── */
+/* 대화 로그 (자비스 응답 패널)                           */
+/* ─────────────────────────────────────────────────── */
+.dialog {
+  flex-shrink: 0;
+  padding: 8px 18px 10px;
+  text-align: center;
+  min-height: 56px;
+  border-bottom: 1px solid var(--border-thin);
+}
+.dialog .you {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--txt-dim);
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+  min-height: 12px;
+}
+.dialog .you::before {
+  content: '> ';
+  color: var(--jarvis-cyan-dim);
+}
+.dialog .jarvis {
+  font-family: var(--kr);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--jarvis-cyan);
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
+  letter-spacing: -0.3px;
+  min-height: 22px;
+}
+
+/* ─────────────────────────────────────────────────── */
+/* 메인 컨트롤 영역 (스크롤)                              */
+/* ─────────────────────────────────────────────────── */
+.main-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px 80px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 4px 10px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  color: var(--jarvis-cyan-dim);
+  text-transform: uppercase;
+}
+.section-header::before {
+  content: '';
+  width: 12px;
+  height: 1px;
+  background: var(--jarvis-cyan);
+}
+.section-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border-thin), transparent);
+}
+
+/* ─────────────────────────────────────────────────── */
+/* 명령 그리드                                          */
+/* ─────────────────────────────────────────────────── */
+.cmd-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.cmd {
+  position: relative;
+  padding: 12px 12px 12px 16px;
+  background: linear-gradient(135deg, rgba(0, 30, 50, 0.6), rgba(0, 15, 30, 0.6));
+  border: 1px solid var(--border-thin);
+  cursor: pointer;
+  transition: all 0.2s;
+  overflow: hidden;
+  text-align: left;
+  font-family: var(--body);
+  color: var(--txt-white);
+  -webkit-appearance: none;
+}
+.cmd::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 3px; height: 100%;
+  background: var(--accent, var(--jarvis-cyan));
+  box-shadow: 0 0 8px var(--accent, var(--jarvis-cyan));
+}
+.cmd::after {
+  content: '';
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 6px; height: 6px;
+  border-top: 1px solid var(--accent, var(--jarvis-cyan));
+  border-right: 1px solid var(--accent, var(--jarvis-cyan));
+  opacity: 0.6;
+}
+.cmd:active {
+  transform: scale(0.97);
+  background: linear-gradient(135deg, rgba(0, 60, 100, 0.7), rgba(0, 30, 60, 0.7));
+  border-color: var(--accent);
+}
+.cmd .cmd-icon {
+  font-size: 14px;
+  margin-bottom: 4px;
+  display: block;
+  filter: drop-shadow(0 0 4px var(--accent));
+}
+.cmd .cmd-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.cmd .cmd-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--txt-white);
+  letter-spacing: -0.2px;
+  line-height: 1.25;
+}
+.cmd .cmd-desc {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--txt-dim);
+  margin-top: 2px;
+  letter-spacing: 0.3px;
+}
+
+.cmd[data-color="cyan"] { --accent: var(--jarvis-cyan); }
+.cmd[data-color="amber"] { --accent: var(--jarvis-amber); }
+.cmd[data-color="gold"] { --accent: var(--jarvis-gold); }
+.cmd[data-color="red"] { --accent: var(--jarvis-red); }
+.cmd[data-color="success"] { --accent: var(--jarvis-success); }
+
+.cmd.wide { grid-column: span 2; }
+
+/* ─────────────────────────────────────────────────── */
+/* 자유 발화 입력                                        */
+/* ─────────────────────────────────────────────────── */
+.input-row {
+  display: flex;
+  gap: 6px;
+  background: rgba(0, 30, 50, 0.5);
+  border: 1px solid var(--border-thin);
+  padding: 4px;
+}
+.input-row input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 10px 10px;
+  color: var(--txt-white);
+  font-family: var(--kr);
+  font-size: 13px;
+  -webkit-appearance: none;
+}
+.input-row input:focus {
+  outline: none;
+}
+.input-row input::placeholder {
+  color: var(--txt-fade);
+  font-style: italic;
+}
+.input-row button {
+  background: var(--jarvis-cyan);
+  color: var(--bg-deep);
+  border: none;
+  padding: 0 16px;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  text-transform: uppercase;
+}
+.input-row button:active {
+  background: var(--jarvis-cyan-dim);
+}
+
+/* ─────────────────────────────────────────────────── */
+/* 활동 로그 (HUD 스타일)                               */
+/* ─────────────────────────────────────────────────── */
+.log-panel {
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--border-thin);
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1.55;
+  max-height: 180px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+.log-panel::before {
+  content: '◆ TRACE LOG';
+  position: sticky;
+  top: 0;
+  display: block;
+  padding: 5px 10px;
+  background: rgba(0, 30, 50, 0.95);
+  border-bottom: 1px solid var(--border-thin);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--jarvis-cyan);
+  z-index: 1;
+}
+.log-content { padding: 4px 10px 10px; }
+.log-entry {
+  display: flex;
+  gap: 8px;
+  padding: 1px 0;
+  animation: log-slide 0.3s ease;
+  word-break: break-all;
+}
+.log-time { color: var(--txt-fade); flex-shrink: 0; min-width: 56px; }
+.log-tag { color: var(--jarvis-cyan); flex-shrink: 0; min-width: 72px; }
+.log-msg { color: var(--txt-cyan); }
+.log-entry.success .log-tag { color: var(--jarvis-success); }
+.log-entry.warn .log-tag { color: var(--jarvis-warning); }
+.log-entry.error .log-tag { color: var(--jarvis-red); }
+.log-entry.heal .log-tag { color: var(--jarvis-gold); }
+.log-entry.speak .log-tag { color: var(--jarvis-amber); }
+
+@keyframes log-slide {
+  from { opacity: 0; transform: translateX(-4px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.log-empty {
+  color: var(--txt-fade);
+  font-style: italic;
+  padding: 8px 4px;
+}
+
+/* ─────────────────────────────────────────────────── */
+/* 모달 시스템                                           */
+/* ─────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+.modal-overlay.show { opacity: 1; pointer-events: auto; }
+
+.modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 88vh;
+  background: linear-gradient(180deg, var(--bg-panel-solid) 0%, var(--bg-deep) 100%);
+  border-top: 1px solid var(--jarvis-cyan);
+  border-left: 1px solid var(--border-thin);
+  border-right: 1px solid var(--border-thin);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+  overflow: hidden;
+  box-shadow: 0 -10px 40px rgba(0, 229, 255, 0.2);
+}
+.modal-overlay.show .modal { transform: translateY(0); }
+
+.modal-handle {
+  width: 36px; height: 3px;
+  background: var(--jarvis-cyan);
+  margin: 8px auto;
+  flex-shrink: 0;
+  opacity: 0.5;
+}
+.modal-head {
+  padding: 8px 18px 14px;
+  border-bottom: 1px solid var(--border-thin);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+.modal-title {
+  font-family: var(--display);
+  font-size: 13px;
+  letter-spacing: 4px;
+  font-weight: 700;
+  color: var(--jarvis-cyan);
+  text-shadow: 0 0 8px var(--jarvis-cyan-glow);
+}
+.modal-close {
+  background: transparent;
+  border: 1px solid var(--border-bright);
+  color: var(--jarvis-cyan);
+  width: 28px; height: 28px;
+  font-size: 14px;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 18px 24px;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ─────────────────────────────────────────────────── */
+/* 환경 셀렉터 (모달 내)                                 */
+/* ─────────────────────────────────────────────────── */
+.env-section { margin-bottom: 16px; }
+.env-section-title {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--jarvis-cyan);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.env-section-title::before {
+  content: '◆';
+  font-size: 8px;
+  color: var(--jarvis-amber);
+}
+
+.env-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+.env-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+
+.env-opt {
+  position: relative;
+  padding: 8px 10px;
+  background: rgba(0, 30, 50, 0.5);
+  border: 1px solid var(--border-thin);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  font-family: var(--body);
+  color: var(--txt-cyan);
+  -webkit-appearance: none;
+}
+.env-opt:active { transform: scale(0.97); }
+.env-opt.selected {
+  background: rgba(0, 229, 255, 0.1);
+  border-color: var(--jarvis-cyan);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.3);
+}
+.env-opt.selected::after {
+  content: '◆';
+  position: absolute;
+  top: 4px; right: 6px;
+  color: var(--jarvis-cyan);
+  font-size: 9px;
+}
+.env-opt.disabled { opacity: 0.3; pointer-events: none; }
+.env-opt .name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--txt-white);
+}
+.env-opt.selected .name { color: var(--jarvis-cyan); }
+.env-opt .meta {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  color: var(--txt-fade);
+  margin-top: 1px;
+}
+
+.env-warning {
+  margin-top: 10px;
+  padding: 8px 10px;
+  background: rgba(255, 45, 45, 0.08);
+  border: 1px solid rgba(255, 45, 45, 0.4);
+  border-left: 3px solid var(--jarvis-red);
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--jarvis-warning);
+  line-height: 1.4;
+}
+.env-warning::before { content: '⚠ '; color: var(--jarvis-red); }
+
+.env-actions {
+  display: flex;
+  gap: 6px;
+  padding-top: 14px;
+  margin-top: 16px;
+  border-top: 1px solid var(--border-thin);
+}
+.env-actions button {
+  flex: 1;
+  padding: 12px;
+  background: rgba(0, 30, 50, 0.6);
+  border: 1px solid var(--border-thin);
+  color: var(--txt-cyan);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  text-transform: uppercase;
+}
+.env-actions button.primary {
+  background: var(--jarvis-cyan);
+  color: var(--bg-deep);
+  border-color: var(--jarvis-cyan);
+  font-weight: 700;
+  box-shadow: 0 0 12px var(--jarvis-cyan-glow);
+}
+.env-actions button:active { transform: scale(0.97); }
+
+/* ─────────────────────────────────────────────────── */
+/* 자가복구 풀스크린                                     */
+/* ─────────────────────────────────────────────────── */
+.heal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  backdrop-filter: blur(14px);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.heal-overlay.show { opacity: 1; pointer-events: auto; }
+
+.heal-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 45, 45, 0.1) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.heal-title {
+  font-family: var(--display);
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: 8px;
+  color: var(--jarvis-red);
+  text-shadow: 0 0 16px var(--jarvis-red);
+  margin-bottom: 6px;
+  z-index: 1;
+}
+.heal-sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--jarvis-warning);
+  margin-bottom: 22px;
+  text-align: center;
+  max-width: 300px;
+  z-index: 1;
+}
+
+.heal-stages {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 1;
+}
+.heal-stage {
+  background: rgba(0, 20, 40, 0.7);
+  border: 1px solid var(--border-thin);
+  padding: 10px 12px;
+  opacity: 0.4;
+  transition: all 0.4s;
+  position: relative;
+  overflow: hidden;
+}
+.heal-stage.active {
+  opacity: 1;
+  border-color: var(--jarvis-cyan);
+}
+.heal-stage.success {
+  opacity: 1;
+  border-color: var(--jarvis-success);
+  background: linear-gradient(90deg, rgba(0, 255, 136, 0.08), rgba(0, 20, 40, 0.7));
+}
+.heal-stage.failed {
+  opacity: 1;
+  border-color: var(--jarvis-red);
+  background: linear-gradient(90deg, rgba(255, 45, 45, 0.08), rgba(0, 20, 40, 0.7));
+}
+.heal-stage-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.heal-stage-num {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--txt-dim);
+  font-weight: 700;
+}
+.heal-stage.active .heal-stage-num { color: var(--jarvis-cyan); }
+.heal-stage.success .heal-stage-num { color: var(--jarvis-success); }
+.heal-stage.failed .heal-stage-num { color: var(--jarvis-red); }
+.heal-stage-status { font-size: 12px; }
+.heal-stage-msg {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--txt-cyan);
+  line-height: 1.35;
+}
+.heal-stage-bar {
+  height: 1px;
+  background: var(--border-thin);
+  margin-top: 6px;
+  overflow: hidden;
+}
+.heal-stage-bar-fill {
+  height: 100%;
+  background: var(--jarvis-cyan);
+  width: 0%;
+  transition: width 0.5s ease;
+  box-shadow: 0 0 4px var(--jarvis-cyan);
+}
+.heal-stage.success .heal-stage-bar-fill { background: var(--jarvis-success); width: 100% !important; }
+.heal-stage.failed .heal-stage-bar-fill { background: var(--jarvis-red); width: 100% !important; }
+
+.heal-close-btn {
+  margin-top: 18px;
+  padding: 10px 24px;
+  background: transparent;
+  border: 1px solid var(--jarvis-cyan);
+  color: var(--jarvis-cyan);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 3px;
+  cursor: pointer;
+  display: none;
+  -webkit-appearance: none;
+  z-index: 1;
+}
+.heal-close-btn.show { display: block; }
+
+/* ─────────────────────────────────────────────────── */
+/* 코드 / 결과 뷰어 (콘솔 모달)                          */
+/* ─────────────────────────────────────────────────── */
+.console-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border-thin);
+}
+.console-tab {
+  flex: 1;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  color: var(--txt-dim);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+  -webkit-appearance: none;
+}
+.console-tab.active {
+  background: rgba(0, 229, 255, 0.1);
+  color: var(--jarvis-cyan);
+  border-bottom: 1px solid var(--jarvis-cyan);
+}
+
+.code-view, .md-view {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--border-thin);
+  padding: 12px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--txt-cyan);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 50vh;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.code-view .kw { color: #66d9ff; font-weight: 700; }
+.code-view .str { color: var(--jarvis-success); }
+.code-view .num { color: var(--jarvis-amber); }
+.code-view .cmt { color: var(--txt-fade); font-style: italic; }
+.code-view .fn { color: #c084fc; }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.md-view { font-family: var(--kr); font-size: 12px; line-height: 1.6; }
+
+/* ─────────────────────────────────────────────────── */
+/* 시세 카드                                             */
+/* ─────────────────────────────────────────────────── */
+.market-card {
+  margin-top: 10px;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(0, 30, 50, 0.7), rgba(0, 15, 30, 0.7));
+  border: 1px solid var(--jarvis-cyan);
+  border-left: 3px solid var(--jarvis-cyan);
+  position: relative;
+  overflow: hidden;
+}
+.market-card::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 60px; height: 60px;
+  background: radial-gradient(circle at top right, rgba(0, 229, 255, 0.15), transparent 70%);
+  pointer-events: none;
+}
+.market-symbol {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 2.5px;
+  color: var(--jarvis-cyan-dim);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.market-price {
+  font-family: var(--display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--txt-white);
+  letter-spacing: -1px;
+  text-shadow: 0 0 12px rgba(0, 229, 255, 0.4);
+}
+.market-change {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+.market-change.up { color: var(--jarvis-success); }
+.market-change.down { color: var(--jarvis-red); }
+
+/* ─────────────────────────────────────────────────── */
+/* 음성 토글 (플로팅)                                    */
+/* ─────────────────────────────────────────────────── */
+.voice-fab {
+  position: fixed;
+  bottom: 16px;
+  right: 14px;
+  width: 48px;
+  height: 48px;
+  background: rgba(0, 30, 50, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--jarvis-cyan);
+  color: var(--jarvis-cyan);
+  border-radius: 50%;
+  font-size: 18px;
+  cursor: pointer;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.4), 0 4px 20px rgba(0, 0, 0, 0.6);
+  -webkit-appearance: none;
+}
+.voice-fab.muted {
+  color: var(--txt-fade);
+  border-color: var(--border-thin);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+}
+.voice-status-mini {
+  position: fixed;
+  bottom: 22px;
+  right: 70px;
+  background: rgba(0, 30, 50, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-thin);
+  color: var(--txt-cyan);
+  padding: 5px 9px;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 1px;
+  z-index: 50;
+  pointer-events: none;
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+/* 사운드 토글 (앰비언트 ON/OFF) */
+.sound-fab {
+  position: fixed;
+  bottom: 72px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 30, 50, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-thin);
+  color: var(--jarvis-cyan);
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  -webkit-appearance: none;
+}
+.sound-fab.muted { color: var(--txt-fade); }
+
+/* ─────────────────────────────────────────────────── */
+/* 부팅 화면                                             */
+/* ─────────────────────────────────────────────────── */
+#boot-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-void);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  transition: opacity 0.6s ease;
+}
+#boot-screen.fade { opacity: 0; pointer-events: none; }
+
+.boot-logo {
+  font-family: var(--display);
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 14px;
+  color: var(--jarvis-cyan);
+  text-shadow:
+    0 0 20px var(--jarvis-cyan-glow),
+    0 0 40px rgba(0, 229, 255, 0.3);
+  animation: boot-glow 2s ease-in-out infinite;
+}
+@keyframes boot-glow {
+  0%, 100% { opacity: 1; text-shadow: 0 0 20px var(--jarvis-cyan-glow), 0 0 40px rgba(0, 229, 255, 0.3); }
+  50% { opacity: 0.8; text-shadow: 0 0 30px var(--jarvis-cyan-glow), 0 0 60px rgba(0, 229, 255, 0.5); }
+}
+
+.boot-tagline {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: var(--jarvis-cyan-dim);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.boot-bar {
+  width: 200px;
+  height: 2px;
+  background: rgba(0, 229, 255, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+.boot-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--jarvis-cyan), transparent);
+  animation: boot-scan 1.5s linear infinite;
+}
+@keyframes boot-scan {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+.boot-log {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--txt-dim);
+  text-align: left;
+  width: 280px;
+  height: 60px;
+  overflow: hidden;
+  line-height: 1.7;
+}
+.boot-log .ok { color: var(--jarvis-success); }
+
+/* 음성 활성화 배너 */
+.audio-banner {
+  background: linear-gradient(90deg, var(--jarvis-cyan), var(--jarvis-amber));
+  color: var(--bg-deep);
+  padding: 10px 16px;
+  text-align: center;
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.hidden { display: none !important; }
+
+/* ─────────────────────────────────────────────────── */
+/* 센서 패널 (마이크·카메라·박수 감지)                   */
+/* ─────────────────────────────────────────────────── */
+.sensor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.sensor-card {
+  position: relative;
+  padding: 9px 10px;
+  background: rgba(0, 30, 50, 0.5);
+  border: 1px solid var(--border-thin);
+  cursor: pointer;
+  transition: all 0.2s;
+  -webkit-appearance: none;
+  text-align: left;
+}
+.sensor-card:active { transform: scale(0.97); }
+.sensor-card.active {
+  border-color: var(--jarvis-cyan);
+  background: rgba(0, 229, 255, 0.08);
+  box-shadow: 0 0 8px rgba(0, 229, 255, 0.25);
+}
+.sensor-card.armed::after {
+  content: '';
+  position: absolute;
+  top: 5px; right: 5px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--jarvis-success);
+  box-shadow: 0 0 6px var(--jarvis-success);
+  animation: status-blink 1.4s ease-in-out infinite;
+}
+.sensor-card.error::after {
+  content: '';
+  position: absolute;
+  top: 5px; right: 5px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--jarvis-red);
+  box-shadow: 0 0 6px var(--jarvis-red);
+}
+.sensor-icon {
+  font-size: 16px;
+  display: block;
+  margin-bottom: 3px;
+  filter: drop-shadow(0 0 4px var(--jarvis-cyan));
+}
+.sensor-label {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 1.5px;
+  color: var(--jarvis-cyan);
+  margin-bottom: 1px;
+  text-transform: uppercase;
+}
+.sensor-status {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  color: var(--txt-fade);
+  letter-spacing: 0.5px;
+}
+.sensor-card.active .sensor-status { color: var(--jarvis-success); }
+
+/* 카메라 PIP (Picture-in-Picture) */
+.camera-pip {
+  position: fixed;
+  top: 70px;
+  right: 8px;
+  width: 96px;
+  height: 130px;
+  border: 1px solid var(--jarvis-cyan);
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 60;
+  overflow: hidden;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.4);
+  display: none;
+}
+.camera-pip.show { display: block; }
+.camera-pip video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1); /* 거울 모드 */
+}
+.camera-pip-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(transparent 0%, transparent 95%, rgba(0, 229, 255, 0.6) 95%, rgba(0, 229, 255, 0.6) 96%, transparent 96%),
+    linear-gradient(90deg, transparent 0%, transparent 95%, rgba(0, 229, 255, 0.6) 95%, rgba(0, 229, 255, 0.6) 96%, transparent 96%);
+}
+.camera-pip-label {
+  position: absolute;
+  top: 4px; left: 6px;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--jarvis-cyan);
+  letter-spacing: 1px;
+  text-shadow: 0 0 4px var(--bg-deep);
+}
+.camera-pip-label::before {
+  content: '◉';
+  color: var(--jarvis-red);
+  margin-right: 3px;
+  animation: status-blink 1.4s ease-in-out infinite;
+}
+.camera-pip-motion {
+  position: absolute;
+  bottom: 4px;
+  left: 6px;
+  right: 6px;
+  height: 2px;
+  background: rgba(0, 229, 255, 0.15);
+  overflow: hidden;
+}
+.camera-pip-motion-fill {
+  height: 100%;
+  background: var(--jarvis-cyan);
+  width: 0%;
+  transition: width 0.15s ease;
+  box-shadow: 0 0 4px var(--jarvis-cyan);
+}
+.camera-pip-motion-fill.detected {
+  background: var(--jarvis-amber);
+  box-shadow: 0 0 6px var(--jarvis-amber);
+}
+.camera-close {
+  position: absolute;
+  top: 2px; right: 2px;
+  background: rgba(0,0,0,0.7);
+  border: none;
+  color: var(--jarvis-cyan);
+  width: 18px; height: 18px;
+  font-size: 12px;
+  cursor: pointer;
+  -webkit-appearance: none;
+}
+
+/* 음성 파형 미니 (마이크 활성 시) */
+.mic-wave {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 2px;
+  align-items: center;
+  height: 24px;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  padding: 4px 12px;
+  border: 1px solid var(--jarvis-cyan);
+  border-radius: 14px;
+  display: none;
+}
+.mic-wave.show { display: flex; }
+.mic-wave-bar {
+  width: 2px;
+  height: 4px;
+  background: var(--jarvis-cyan);
+  box-shadow: 0 0 4px var(--jarvis-cyan);
+  border-radius: 1px;
+  transition: height 0.05s ease;
+}
+.mic-wave-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--jarvis-cyan);
+  letter-spacing: 1px;
+  margin-left: 6px;
+}
+
+/* 박수 감지 플래시 */
+.clap-flash {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(255, 184, 77, 0.4), transparent 60%);
+  z-index: 90;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.clap-flash.show { opacity: 1; }
+
+/* 인터림 STT 표시 */
+.dialog .you.interim {
+  color: var(--jarvis-amber);
+  font-style: italic;
+}
+.dialog .you.interim::before {
+  content: '◌ ';
+}
+</style>
+</head>
+<body>
+
+<!-- 부팅 화면 -->
+<div id="boot-screen">
+  <div class="boot-logo">J.A.R.V.I.S</div>
+  <div class="boot-tagline">
+    JUST A RATHER VERY<br>INTELLIGENT SYSTEM
+  </div>
+  <div class="boot-bar"></div>
+  <div class="boot-log" id="boot-log"></div>
+</div>
+
+<div id="app" class="hidden">
+
+  <!-- 음성 활성화 배너 -->
+  <div class="audio-banner" id="audio-banner">
+    🔊 TAP TO ACTIVATE VOICE
+  </div>
+
+  <header>
+    <div class="logo">
+      <div class="logo-mark">J.A.R.V.I.S</div>
+      <div class="logo-tag">MK III · Universal AI</div>
+    </div>
+    <div class="hud-status">
+      <div class="status-line">
+        <span class="status-dot"></span>
+        <span id="state-label">STANDBY</span>
+      </div>
+      <div class="status-time" id="status-time">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- 환경 미니 바 -->
+  <div class="env-mini" id="env-mini">
+    <div class="env-mini-label">ENV</div>
+    <div class="env-mini-summary" id="env-summary">초기화 중...</div>
+  </div>
+
+  <!-- 메인 코어 시각화 -->
+  <div class="core-container state-idle" id="core">
+    <div class="hud-bracket tl"></div>
+    <div class="hud-bracket tr"></div>
+    <div class="hud-bracket bl"></div>
+    <div class="hud-bracket br"></div>
+
+    <div class="core-state-text" id="core-state-text">SYSTEM READY</div>
+
+    <div class="core-ring r2"></div>
+    <div class="core-ring r1"></div>
+    <div class="core-ring r3"></div>
+
+    <div class="core-dots">
+      <div class="core-dot"></div>
+      <div class="core-dot"></div>
+      <div class="core-dot"></div>
+      <div class="core-dot"></div>
+      <div class="core-dot"></div>
+      <div class="core-dot"></div>
+      <div class="core-dot"></div>
+    </div>
+
+    <!-- 4단계 파이프라인 (Microsoft JARVIS의 Plan→Select→Execute→Respond) -->
+    <div class="pipeline" id="pipeline">
+      <div class="pipeline-step" data-step="plan">PLAN</div>
+      <div class="pipeline-step" data-step="route">ROUTE</div>
+      <div class="pipeline-step" data-step="exec">EXEC</div>
+      <div class="pipeline-step" data-step="resp">RESPOND</div>
+    </div>
+  </div>
+
+  <!-- 대화 패널 -->
+  <div class="dialog">
+    <div class="you" id="you-line">시스템 대기 중</div>
+    <div class="jarvis" id="jarvis-line">At your service, sir.</div>
+  </div>
+
+  <!-- 메인 영역 -->
+  <div class="main-area">
+
+    <div class="section-header">SENSOR ARRAY</div>
+    <div class="sensor-grid">
+      <button class="sensor-card" id="sensor-mic">
+        <span class="sensor-icon">🎙</span>
+        <div class="sensor-label">MIC · STT</div>
+        <div class="sensor-status" id="sensor-mic-status">OFFLINE</div>
+      </button>
+      <button class="sensor-card" id="sensor-cam">
+        <span class="sensor-icon">📹</span>
+        <div class="sensor-label">CAMERA</div>
+        <div class="sensor-status" id="sensor-cam-status">OFFLINE</div>
+      </button>
+      <button class="sensor-card" id="sensor-clap">
+        <span class="sensor-icon">👏</span>
+        <div class="sensor-label">CLAP DET</div>
+        <div class="sensor-status" id="sensor-clap-status">OFFLINE</div>
+      </button>
+    </div>
+
+    <div class="section-header">EVERYDAY</div>
+    <div class="cmd-grid">
+      <button class="cmd" data-color="cyan" data-cmd="time-ask">
+        <span class="cmd-icon">🕐</span>
+        <div class="cmd-label">TIME</div>
+        <div class="cmd-name">"지금 몇시야?"</div>
+        <div class="cmd-desc">시간·날짜·요일</div>
+      </button>
+      <button class="cmd" data-color="cyan" data-cmd="weather-ask">
+        <span class="cmd-icon">☀</span>
+        <div class="cmd-label">WX</div>
+        <div class="cmd-name">"오늘 날씨"</div>
+        <div class="cmd-desc">기온·강수·미세먼지</div>
+      </button>
+      <button class="cmd" data-color="cyan" data-cmd="schedule-ask">
+        <span class="cmd-icon">📅</span>
+        <div class="cmd-label">CAL</div>
+        <div class="cmd-name">"오늘 일정"</div>
+        <div class="cmd-desc">미팅·약속·할 일</div>
+      </button>
+      <button class="cmd" data-color="amber" data-cmd="memo-add">
+        <span class="cmd-icon">📝</span>
+        <div class="cmd-label">NOTE</div>
+        <div class="cmd-name">"메모 적어둬"</div>
+        <div class="cmd-desc">빠른 메모</div>
+      </button>
+    </div>
+
+    <div class="section-header">CONVERSATION</div>
+    <div class="cmd-grid">
+      <button class="cmd" data-color="amber" data-cmd="greeting">
+        <span class="cmd-icon">👋</span>
+        <div class="cmd-label">HI</div>
+        <div class="cmd-name">"안녕"</div>
+        <div class="cmd-desc">자비스의 인사</div>
+      </button>
+      <button class="cmd" data-color="amber" data-cmd="joke">
+        <span class="cmd-icon">😄</span>
+        <div class="cmd-label">FUN</div>
+        <div class="cmd-name">"농담 해봐"</div>
+        <div class="cmd-desc">위트 한 마디</div>
+      </button>
+      <button class="cmd" data-color="amber" data-cmd="how-are-you">
+        <span class="cmd-icon">💭</span>
+        <div class="cmd-label">CHAT</div>
+        <div class="cmd-name">"어때 자비스"</div>
+        <div class="cmd-desc">잡담</div>
+      </button>
+      <button class="cmd" data-color="amber" data-cmd="compliment">
+        <span class="cmd-icon">⭐</span>
+        <div class="cmd-label">CHEER</div>
+        <div class="cmd-name">"칭찬해줘"</div>
+        <div class="cmd-desc">격려</div>
+      </button>
+    </div>
+
+    <div class="section-header">KNOWLEDGE</div>
+    <div class="cmd-grid">
+      <button class="cmd" data-color="cyan" data-cmd="research">
+        <span class="cmd-icon">🔍</span>
+        <div class="cmd-label">SEARCH</div>
+        <div class="cmd-name">"검색해"</div>
+        <div class="cmd-desc">웹 검색</div>
+      </button>
+      <button class="cmd" data-color="cyan" data-cmd="translate">
+        <span class="cmd-icon">🌐</span>
+        <div class="cmd-label">TRANS</div>
+        <div class="cmd-name">"번역해"</div>
+        <div class="cmd-desc">한↔영</div>
+      </button>
+      <button class="cmd" data-color="cyan" data-cmd="calculate">
+        <span class="cmd-icon">🔢</span>
+        <div class="cmd-label">CALC</div>
+        <div class="cmd-name">"계산해"</div>
+        <div class="cmd-desc">수식 평가</div>
+      </button>
+      <button class="cmd" data-color="cyan" data-cmd="news">
+        <span class="cmd-icon">📰</span>
+        <div class="cmd-label">NEWS</div>
+        <div class="cmd-name">"뉴스 알려줘"</div>
+        <div class="cmd-desc">속보·헤드라인</div>
+      </button>
+    </div>
+
+    <div class="section-header">CREATE</div>
+    <div class="cmd-grid">
+      <button class="cmd" data-color="success" data-cmd="write">
+        <span class="cmd-icon">✍</span>
+        <div class="cmd-label">WRITE</div>
+        <div class="cmd-name">"글 써줘"</div>
+        <div class="cmd-desc">편지·시·초안</div>
+      </button>
+      <button class="cmd" data-color="success" data-cmd="summarize">
+        <span class="cmd-icon">📑</span>
+        <div class="cmd-label">SUM</div>
+        <div class="cmd-name">"요약해"</div>
+        <div class="cmd-desc">긴 글 → 짧게</div>
+      </button>
+      <button class="cmd" data-color="success" data-cmd="brainstorm">
+        <span class="cmd-icon">💡</span>
+        <div class="cmd-label">IDEA</div>
+        <div class="cmd-name">"아이디어"</div>
+        <div class="cmd-desc">브레인스토밍</div>
+      </button>
+      <button class="cmd" data-color="success" data-cmd="debug">
+        <span class="cmd-icon">⚠</span>
+        <div class="cmd-label">DBG</div>
+        <div class="cmd-name">"버그 분석"</div>
+        <div class="cmd-desc">코드 디버그</div>
+      </button>
+    </div>
+
+    <div class="section-header">SMART HOME</div>
+    <div class="cmd-grid">
+      <button class="cmd" data-color="amber" data-cmd="lights-on">
+        <span class="cmd-icon">💡</span>
+        <div class="cmd-label">LIGHT</div>
+        <div class="cmd-name">"불 켜"</div>
+        <div class="cmd-desc">조명 ON</div>
+      </button>
+      <button class="cmd" data-color="amber" data-cmd="lights-off">
+        <span class="cmd-icon">🌑</span>
+        <div class="cmd-label">LIGHT</div>
+        <div class="cmd-name">"불 꺼"</div>
+        <div class="cmd-desc">조명 OFF</div>
+      </button>
+      <button class="cmd" data-color="amber" data-cmd="music-play">
+        <span class="cmd-icon">🎵</span>
+        <div class="cmd-label">MUSIC</div>
+        <div class="cmd-name">"음악 틀어"</div>
+        <div class="cmd-desc">스트리밍</div>
+      </button>
+      <button class="cmd" data-color="amber" data-cmd="security">
+        <span class="cmd-icon">🛡</span>
+        <div class="cmd-label">SEC</div>
+        <div class="cmd-name">"보안 모드"</div>
+        <div class="cmd-desc">잠금·경비</div>
+      </button>
+    </div>
+
+    <div class="section-header">TRADING (PRO)</div>
+    <div class="cmd-grid">
+      <button class="cmd" data-color="amber" data-cmd="market">
+        <span class="cmd-icon">📈</span>
+        <div class="cmd-label">MKT</div>
+        <div class="cmd-name">"비트 가격"</div>
+        <div class="cmd-desc">실제 OKX API</div>
+      </button>
+      <button class="cmd" data-color="cyan" data-cmd="generate">
+        <span class="cmd-icon">⚙</span>
+        <div class="cmd-label">GEN</div>
+        <div class="cmd-name">"OKX 코드"</div>
+        <div class="cmd-desc">자동매매 코드</div>
+      </button>
+      <button class="cmd" data-color="cyan" data-cmd="db">
+        <span class="cmd-icon">▤</span>
+        <div class="cmd-label">DB</div>
+        <div class="cmd-name">"DB 분석"</div>
+        <div class="cmd-desc">8단계 거래 분석</div>
+      </button>
+      <button class="cmd" data-color="success" data-cmd="csv">
+        <span class="cmd-icon">▦</span>
+        <div class="cmd-label">SCRN</div>
+        <div class="cmd-name">"저평가 종목"</div>
+        <div class="cmd-desc">CSV 스크리닝</div>
+      </button>
+      <button class="cmd wide" data-color="gold" data-cmd="self-heal">
+        <span class="cmd-icon">🛡</span>
+        <div class="cmd-label">HEAL</div>
+        <div class="cmd-name">"자가복구"</div>
+        <div class="cmd-desc">에러 → 자동 수정 → 재실행</div>
+      </button>
+    </div>
+
+    <div class="section-header">SYSTEM</div>
+    <div class="cmd-grid">
+      <button class="cmd" data-color="cyan" data-cmd="status">
+        <span class="cmd-icon">◈</span>
+        <div class="cmd-label">SYS</div>
+        <div class="cmd-name">"시스템 상태"</div>
+        <div class="cmd-desc">전체 점검</div>
+      </button>
+      <button class="cmd" data-color="red" data-cmd="bargein">
+        <span class="cmd-icon">⏸</span>
+        <div class="cmd-label">INT</div>
+        <div class="cmd-name">Barge-in</div>
+        <div class="cmd-desc">발화 중단</div>
+      </button>
+    </div>
+
+    <div class="section-header">DIRECT INPUT</div>
+    <div class="input-row">
+      <input id="text-input" type="text" placeholder="자유롭게 명령하세요...">
+      <button id="text-send">SEND</button>
+    </div>
+
+    <div class="section-header">TRACE LOG</div>
+    <div class="log-panel">
+      <div class="log-content" id="log">
+        <div class="log-empty">명령 대기 중...</div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- 음성 토글 -->
+<button class="voice-fab" id="voice-fab" title="Voice toggle">🔊</button>
+<div class="voice-status-mini" id="voice-status">미활성</div>
+
+<!-- 앰비언트 사운드 토글 -->
+<button class="sound-fab" id="sound-fab" title="앰비언트 사운드 ON/OFF">🎵</button>
+
+<!-- 마이크 파형 (활성 시 상단 중앙) -->
+<div class="mic-wave" id="mic-wave">
+  <div class="mic-wave-bar"></div>
+  <div class="mic-wave-bar"></div>
+  <div class="mic-wave-bar"></div>
+  <div class="mic-wave-bar"></div>
+  <div class="mic-wave-bar"></div>
+  <div class="mic-wave-bar"></div>
+  <div class="mic-wave-bar"></div>
+  <div class="mic-wave-bar"></div>
+  <div class="mic-wave-bar"></div>
+  <div class="mic-wave-bar"></div>
+  <div class="mic-wave-bar"></div>
+  <div class="mic-wave-bar"></div>
+  <span class="mic-wave-label">LISTENING</span>
+</div>
+
+<!-- 카메라 PIP -->
+<div class="camera-pip" id="camera-pip">
+  <video id="camera-video" autoplay playsinline muted></video>
+  <div class="camera-pip-overlay"></div>
+  <div class="camera-pip-label">CAM-01</div>
+  <div class="camera-pip-motion">
+    <div class="camera-pip-motion-fill" id="camera-motion"></div>
+  </div>
+  <button class="camera-close" id="camera-close">✕</button>
+</div>
+
+<!-- 박수 감지 플래시 -->
+<div class="clap-flash" id="clap-flash"></div>
+
+<!-- 환경 모달 -->
+<div class="modal-overlay" id="modal-env">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <div class="modal-title">ENVIRONMENT</div>
+      <button class="modal-close" data-close="modal-env">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <div class="env-section">
+        <div class="env-section-title">ASSET MARKET</div>
+        <div class="env-grid">
+          <button class="env-opt" data-group="market" data-value="kr-stock">
+            <span class="name">🇰🇷 한국 주식</span>
+            <span class="meta">KOSPI / KOSDAQ</span>
+          </button>
+          <button class="env-opt" data-group="market" data-value="us-stock">
+            <span class="name">🇺🇸 미국 주식</span>
+            <span class="meta">NYSE / NASDAQ</span>
+          </button>
+          <button class="env-opt" data-group="market" data-value="crypto">
+            <span class="name">₿ 크립토</span>
+            <span class="meta">BTC / ETH 외</span>
+          </button>
+          <button class="env-opt" data-group="market" data-value="futures">
+            <span class="name">📊 선물·옵션</span>
+            <span class="meta">CME / KOSPI200</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="env-section">
+        <div class="env-section-title">BROKER / EXCHANGE</div>
+        <div class="env-grid" id="env-brokers"></div>
+      </div>
+
+      <div class="env-section">
+        <div class="env-section-title">OPERATING SYSTEM</div>
+        <div class="env-grid three">
+          <button class="env-opt" data-group="os" data-value="win64"><span class="name">🪟 Win64</span><span class="meta">Py 3.11+</span></button>
+          <button class="env-opt" data-group="os" data-value="win32"><span class="name">🪟 Win32</span><span class="meta">OCX</span></button>
+          <button class="env-opt" data-group="os" data-value="mac"><span class="name">🍎 macOS</span><span class="meta">REST</span></button>
+          <button class="env-opt" data-group="os" data-value="linux"><span class="name">🐧 Linux</span><span class="meta">서버</span></button>
+          <button class="env-opt" data-group="os" data-value="docker"><span class="name">🐳 Docker</span><span class="meta">컨테이너</span></button>
+          <button class="env-opt" data-group="os" data-value="cloud"><span class="name">☁️ Cloud</span><span class="meta">Lambda</span></button>
+        </div>
+      </div>
+
+      <div class="env-section">
+        <div class="env-section-title">TIMEFRAME</div>
+        <div class="env-grid three">
+          <button class="env-opt" data-group="tf" data-value="tick"><span class="name">틱</span><span class="meta">HFT</span></button>
+          <button class="env-opt" data-group="tf" data-value="1m"><span class="name">1~5분</span><span class="meta">단타</span></button>
+          <button class="env-opt" data-group="tf" data-value="15m"><span class="name">15분~1H</span><span class="meta">데이</span></button>
+          <button class="env-opt" data-group="tf" data-value="day"><span class="name">일봉</span><span class="meta">스윙</span></button>
+          <button class="env-opt" data-group="tf" data-value="week"><span class="name">주봉</span><span class="meta">중장기</span></button>
+          <button class="env-opt" data-group="tf" data-value="event"><span class="name">이벤트</span><span class="meta">뉴스</span></button>
+        </div>
+      </div>
+
+      <div class="env-section">
+        <div class="env-section-title">EXECUTION MODE</div>
+        <div class="env-grid">
+          <button class="env-opt" data-group="mode" data-value="paper"><span class="name">📝 페이퍼</span><span class="meta">모의투자</span></button>
+          <button class="env-opt" data-group="mode" data-value="backtest"><span class="name">🧪 백테스트</span><span class="meta">과거 데이터</span></button>
+          <button class="env-opt" data-group="mode" data-value="live-small"><span class="name">🟢 실전 소액</span><span class="meta">~100만원</span></button>
+          <button class="env-opt" data-group="mode" data-value="live"><span class="name">🔴 실전</span><span class="meta">정상 자본</span></button>
+        </div>
+      </div>
+
+      <div class="env-section">
+        <div class="env-section-title">RISK PROFILE</div>
+        <div class="env-grid">
+          <button class="env-opt" data-group="risk" data-value="conservative"><span class="name">🛡 보수</span><span class="meta">SL 0.3%</span></button>
+          <button class="env-opt" data-group="risk" data-value="balanced"><span class="name">⚖ 균형</span><span class="meta">SL 0.7%</span></button>
+          <button class="env-opt" data-group="risk" data-value="aggressive"><span class="name">🔥 공격</span><span class="meta">SL 1.5%</span></button>
+          <button class="env-opt" data-group="risk" data-value="custom"><span class="name">⚙ 커스텀</span><span class="meta">직접</span></button>
+        </div>
+      </div>
+
+      <div class="env-section">
+        <div class="env-section-title">STRATEGY FAMILY</div>
+        <div class="env-grid">
+          <button class="env-opt" data-group="strategy" data-value="orb"><span class="name">ORB</span><span class="meta">Opening Range</span></button>
+          <button class="env-opt" data-group="strategy" data-value="trend"><span class="name">추세</span><span class="meta">SuperTrend·MACD</span></button>
+          <button class="env-opt" data-group="strategy" data-value="meanrev"><span class="name">회귀</span><span class="meta">RSI·BB</span></button>
+          <button class="env-opt" data-group="strategy" data-value="bsi"><span class="name">BSI</span><span class="meta">체결강도</span></button>
+          <button class="env-opt" data-group="strategy" data-value="theme"><span class="name">테마</span><span class="meta">뉴스 기반</span></button>
+          <button class="env-opt" data-group="strategy" data-value="quant"><span class="name">팩터</span><span class="meta">PER/PBR</span></button>
+        </div>
+      </div>
+
+      <div id="env-warning" class="env-warning hidden"></div>
+
+      <div class="env-actions">
+        <button id="env-reset">RESET</button>
+        <button class="primary" id="env-apply">APPLY</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- 콘솔 모달 -->
+<div class="modal-overlay" id="modal-console">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <div class="modal-title">TRADING CONSOLE</div>
+      <button class="modal-close" data-close="modal-console">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="console-tabs">
+        <button class="console-tab active" data-tab="code">CODE</button>
+        <button class="console-tab" data-tab="analysis">ANALYSIS</button>
+        <button class="console-tab" data-tab="result">RESULT</button>
+      </div>
+      <div class="tab-content active" data-content="code">
+        <div class="code-view" id="cn-code">// Awaiting command...</div>
+      </div>
+      <div class="tab-content" data-content="analysis">
+        <div class="md-view" id="cn-analysis">// Analysis output</div>
+      </div>
+      <div class="tab-content" data-content="result">
+        <div class="md-view" id="cn-result">// Execution result</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 자가복구 풀스크린 -->
+<div class="heal-overlay" id="heal-overlay">
+  <div class="heal-title">SELF-HEALING</div>
+  <div class="heal-sub" id="heal-sub">DETECTING ANOMALY...</div>
+  <div class="heal-stages" id="heal-stages"></div>
+  <button class="heal-close-btn" id="heal-close">CLOSE</button>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════
+// J.A.R.V.I.S Mk II — Mobile Edition
+// 종합: isair/jarvis (Intent Judge) + OpenJarvis (Skills) +
+//       TimLuka (LangGraph 4-stage) + DEXTER (자가복구·환경)
+// ════════════════════════════════════════════════════════════
+
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// ─── 환경 상태 ─────────────────────────────────────
+const BROKERS = {
+  'kr-stock': [
+    { id: 'kiwoom-ocx',  name: '키움 OpenAPI+',  meta: 'OCX · 32-bit',     os: ['win32'] },
+    { id: 'kiwoom-rest', name: '키움 REST',      meta: 'OAuth · 모든 OS',  os: ['win64','win32','mac','linux','docker','cloud'] },
+    { id: 'kis',         name: '한국투자증권',    meta: 'REST',             os: ['win64','win32','mac','linux','docker','cloud'] },
+    { id: 'ls',          name: 'LS증권 Xing',    meta: 'COM/REST',         os: ['win64','win32','mac','linux','docker','cloud'] },
+    { id: 'creon',       name: '대신 CREON',     meta: 'COM · Windows',    os: ['win32','win64'] },
+  ],
+  'us-stock': [
+    { id: 'ibkr',        name: 'Interactive Brokers', meta: 'TWS API',     os: ['win64','mac','linux','docker','cloud'] },
+    { id: 'alpaca',      name: 'Alpaca',              meta: 'REST 무료',   os: ['win64','win32','mac','linux','docker','cloud'] },
+    { id: 'schwab',      name: 'Charles Schwab',      meta: 'REST',         os: ['win64','win32','mac','linux','docker','cloud'] },
+    { id: 'tradier',     name: 'Tradier',             meta: '옵션 강세',    os: ['win64','win32','mac','linux','docker','cloud'] },
+  ],
+  'crypto': [
+    { id: 'okx',         name: 'OKX',          meta: 'REST/WS perpetual',  os: ['win64','win32','mac','linux','docker','cloud'] },
+    { id: 'binance',     name: 'Binance',      meta: '최대 거래량',          os: ['win64','win32','mac','linux','docker','cloud'] },
+    { id: 'bybit',       name: 'Bybit',        meta: 'perpetual',           os: ['win64','win32','mac','linux','docker','cloud'] },
+    { id: 'upbit',       name: 'Upbit',        meta: 'KRW',                 os: ['win64','win32','mac','linux','docker','cloud'] },
+    { id: 'bithumb',     name: 'Bithumb',      meta: 'KRW',                 os: ['win64','win32','mac','linux','docker','cloud'] },
+  ],
+  'futures': [
+    { id: 'kis-futures', name: '한국투자 선물',   meta: 'KOSPI200',            os: ['win64','win32','mac','linux'] },
+    { id: 'ibkr-futures', name: 'IBKR 선물',     meta: 'CME 글로벌',          os: ['win64','mac','linux','docker','cloud'] },
+    { id: 'okx-futures', name: 'OKX 선물',       meta: '크립토 perpetual',     os: ['win64','win32','mac','linux','docker','cloud'] },
+  ],
+};
+
+const DEFAULT_ENV = {
+  market: 'crypto', broker: 'okx', os: 'win64',
+  tf: '15m', mode: 'paper', risk: 'balanced', strategy: 'orb',
+};
+let env = { ...DEFAULT_ENV };
+let envDraft = { ...env };
+
+// ─── DOM 핸들 ──────────────────────────────────────
+const core = $('#core');
+const stateLabel = $('#state-label');
+const coreStateText = $('#core-state-text');
+const youLine = $('#you-line');
+const jarvisLine = $('#jarvis-line');
+const logEl = $('#log');
+const voiceFab = $('#voice-fab');
+const voiceStatus = $('#voice-status');
+const statusTime = $('#status-time');
+
+// ─── 상태 ──────────────────────────────────────────
+let currentState = 'idle';
+let isProcessing = false;
+let ttsEnabled = true;
+let audioUnlocked = false;
+let pickedVoice = null;
+const synth = window.speechSynthesis;
+
+// ─── 시계 (JARVIS 헤더) ────────────────────────────
+function tickClock() {
+  const d = new Date();
+  const t = d.toTimeString().slice(0, 8);
+  statusTime.textContent = t;
+}
+setInterval(tickClock, 1000);
+tickClock();
+
+// ─── 상태 머신 ─────────────────────────────────────
+const STATE_LABELS = {
+  idle: 'STANDBY',
+  listening: 'LISTENING',
+  thinking: 'PROCESSING',
+  speaking: 'TRANSMITTING',
+  healing: 'SELF-HEALING',
+  error: 'ERROR',
+};
+
+function setState(s, sub='') {
+  const prev = currentState;
+  currentState = s;
+  core.className = 'core-container state-' + s;
+  stateLabel.textContent = STATE_LABELS[s] || s.toUpperCase();
+  coreStateText.textContent = sub || STATE_LABELS[s] || s.toUpperCase();
+
+  // 상태 전환 사운드
+  if (s !== prev) {
+    if (s === 'thinking') playProcess();
+    else if (s === 'speaking') playRespond();
+    else if (s === 'healing') playError();
+    else if (s === 'error') playError();
+  }
+}
+
+// ─── 4단계 파이프라인 시각화 ───────────────────────
+function setPipeline(active) {
+  $$('.pipeline-step').forEach(el => {
+    const step = el.dataset.step;
+    el.classList.remove('active', 'done');
+    if (active.includes(step)) el.classList.add('active');
+  });
+  // 파이프라인 진행 시 짧은 틱 사운드
+  if (active.length > 0) playProcessTick();
+}
+function markPipelineDone(step) {
+  $$(`.pipeline-step[data-step="${step}"]`).forEach(el => {
+    el.classList.remove('active');
+    el.classList.add('done');
+  });
+}
+function resetPipeline() {
+  $$('.pipeline-step').forEach(el => el.classList.remove('active', 'done'));
+}
+
+// ─── 로그 ──────────────────────────────────────────
+function log(tag, msg, kind='') {
+  const empty = logEl.querySelector('.log-empty');
+  if (empty) empty.remove();
+  const time = new Date().toTimeString().slice(0, 8);
+  const entry = document.createElement('div');
+  entry.className = 'log-entry' + (kind ? ' ' + kind : '');
+  entry.innerHTML = `<span class="log-time">${time}</span><span class="log-tag">${tag}</span><span class="log-msg">${msg}</span>`;
+  logEl.appendChild(entry);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+// ─── 발화 표시 + TTS ──────────────────────────────
+function setYou(text) {
+  youLine.textContent = text;
+}
+
+function speak(text, opts={}) {
+  jarvisLine.textContent = text;
+  log('SPEAK', text, 'speak');
+
+  if (!ttsEnabled) return;
+  if (!('speechSynthesis' in window)) return;
+  if (!audioUnlocked) {
+    log('TTS', '⚠ 음성 활성화 필요', 'warn');
+    return;
+  }
+
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  applyJarvisVoice(u);
+  if (opts.rate) u.rate = opts.rate;
+  if (opts.pitch) u.pitch = opts.pitch;
+
+  // 자기 음성 무시 — TTS 재생 중엔 STT를 일시 정지
+  const wasRecognizing = recognitionActive && recognition;
+  if (wasRecognizing) {
+    try { recognition.stop(); recognitionActive = false; } catch (e) {}
+  }
+
+  u.onend = () => {
+    // TTS 끝나면 STT 재개 (마이크 활성 상태일 때만)
+    if (micActive && !recognitionActive && recognition) {
+      try { recognition.start(); recognitionActive = true; } catch (e) {
+        // 새로 만들어야 할 수 있음
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SR) {
+          recognition = new SR();
+          recognition.lang = 'ko-KR';
+          recognition.continuous = true;
+          recognition.interimResults = true;
+          attachRecognitionHandlers();
+          try { recognition.start(); recognitionActive = true; } catch (e2) {}
+        }
+      }
+    }
+  };
+  u.onerror = e => log('TTS', 'error: ' + (e.error || 'unknown'), 'error');
+  synth.speak(u);
+}
+
+function stopTTS() {
+  if (synth) synth.cancel();
+}
+
+// ─── 음성 unlock + voice 선택 ───────────────────────
+function unlockAudio() {
+  if (audioUnlocked) return;
+  if (!('speechSynthesis' in window)) {
+    voiceStatus.textContent = '미지원';
+    return;
+  }
+  try {
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    synth.speak(u);
+    audioUnlocked = true;
+    refreshVoices();
+    log('AUDIO', '음성 시스템 활성화', 'success');
+
+    setTimeout(() => {
+      // Paul Bettany 자비스의 명대사 풍 인사
+      const greet = new SpeechSynthesisUtterance(
+        "At your service, sir. All systems are online and functioning. 자비스 가동되었습니다, 보스."
+      );
+      applyJarvisVoice(greet);
+      // 인사말은 영어부터 시작이라 영국 voice 강제
+      if (pickedVoice) greet.voice = pickedVoice;
+      greet.lang = 'en-GB';
+      greet.pitch = 0.82;
+      greet.rate = 0.88;
+      synth.speak(greet);
+    }, 200);
+  } catch (e) {
+    log('AUDIO', 'unlock 실패: ' + e.message, 'error');
+  }
+  const banner = $('#audio-banner');
+  if (banner) {
+    banner.style.transition = 'all 0.4s';
+    banner.style.maxHeight = '0';
+    banner.style.padding = '0';
+    banner.style.opacity = '0';
+    banner.style.overflow = 'hidden';
+  }
+}
+
+// 자비스 같은 남자 보이스 선택 (영국 남성 절대 우선)
+function refreshVoices() {
+  if (!synth) return;
+  const voices = synth.getVoices();
+
+  // 영화 자비스의 정체성 = 영국 남성 (Paul Bettany 톤)
+  // 한국어 voice는 거의 다 여성이고 자비스 톤이 안 나옴 → 영어 voice로 처리
+  // 한국어 발화도 영국 남성 voice가 발음하면 더 자비스 같음
+  pickedVoice =
+    // 1. 영국 남성 (우선순위 1: 정통 자비스)
+    voices.find(v => /^en[-_]GB/i.test(v.lang) && /(daniel|george|oliver|james|arthur|harry|ryan)/i.test(v.name)) ||
+    // 2. en-GB 중 여성으로 알려진 것 제외
+    voices.find(v => /^en[-_]GB/i.test(v.lang) && !/female|samantha|moira|kate|serena|fiona|tessa|karen|veena/i.test(v.name)) ||
+    // 3. Microsoft 영국 voice
+    voices.find(v => /microsoft.*(george|ryan|james|oliver)/i.test(v.name)) ||
+    // 4. Google 영국 voice
+    voices.find(v => /google.*uk.*english.*male/i.test(v.name)) ||
+    // 5. 미국 남성 voice
+    voices.find(v => /^en[-_]US/i.test(v.lang) && /(alex|fred|mark|aaron|tom|david|reed|guy|bruce)/i.test(v.name)) ||
+    voices.find(v => /^en[-_]US/i.test(v.lang) && /male/i.test(v.name)) ||
+    // 6. 한국어 남성 (희귀하지만 시도)
+    voices.find(v => v.lang.startsWith('ko') && /(male|sangjun|injeong|namhoon|seonbo|inseong|inho)/i.test(v.name)) ||
+    // 7. 한국어 (마지막 폴백 — 톤 조정으로 남성스럽게)
+    voices.find(v => v.lang === 'ko-KR') ||
+    voices.find(v => v.lang.startsWith('ko')) ||
+    voices[0];
+
+  // 한국어 voice도 별도 보관 (한국어 문장은 가능하면 한국어 voice 사용)
+  pickedKoreanVoice = voices.find(v => v.lang === 'ko-KR') || voices.find(v => v.lang.startsWith('ko')) || null;
+
+  if (pickedVoice) {
+    const n = pickedVoice.name;
+    voiceStatus.textContent = (n.length > 14 ? n.slice(0, 14) + '…' : n);
+  } else if (voices.length === 0) {
+    voiceStatus.textContent = 'voice 로딩';
+  } else {
+    voiceStatus.textContent = '한국어 없음';
+  }
+}
+
+let pickedKoreanVoice = null;
+
+// 자비스 스타일로 utterance 셋팅 (Paul Bettany 톤 흉내)
+// Paul Bettany 자비스 = 깊고 차분한 영국 신사, 약간의 위트
+function applyJarvisVoice(u) {
+  const isKor = /[\uAC00-\uD7AF]/.test(u.text);
+
+  if (isKor) {
+    // 한국어 — 한국어 voice 우선이지만 자비스 톤 적용
+    if (pickedKoreanVoice) {
+      u.voice = pickedKoreanVoice;
+      u.lang = 'ko-KR';
+      // 한국어 voice는 대부분 여성 → pitch 더 낮춰서 남성 톤 흉내
+      u.pitch = 0.72;   // 더 낮게 (한국어 여성 voice → 남성 흉내)
+      u.rate = 0.92;
+    } else if (pickedVoice) {
+      // 한국어 voice 없으면 영국 남성 voice가 한국어 발음 시도
+      u.voice = pickedVoice;
+      u.lang = pickedVoice.lang;
+      u.pitch = 0.85;
+      u.rate = 0.95;
+    }
+  } else {
+    // 영어 — 영국 남성 voice + Paul Bettany 톤 (낮고 차분, 위엄)
+    if (pickedVoice) u.voice = pickedVoice;
+    u.lang = 'en-GB';
+    u.pitch = 0.82;   // 약간 낮게 (Paul Bettany 음역)
+    u.rate = 0.90;    // 천천히 (영국 신사처럼 또박또박)
+  }
+
+  u.volume = 1.0;
+}
+
+voiceFab.addEventListener('click', () => {
+  if (!audioUnlocked) unlockAudio();
+  ttsEnabled = !ttsEnabled;
+  voiceFab.classList.toggle('muted', !ttsEnabled);
+  voiceFab.textContent = ttsEnabled ? '🔊' : '🔇';
+  if (!ttsEnabled) stopTTS();
+  log('SET', `TTS ${ttsEnabled ? 'ON' : 'OFF'}`);
+});
+
+// ─── 환경 셀렉터 로직 ─────────────────────────────
+function validateEnv(e) {
+  const w = [];
+  if (e.broker === 'kiwoom-ocx' && e.os !== 'win32')
+    w.push('키움 OpenAPI+(OCX)는 32-bit Windows 전용입니다');
+  if (e.broker === 'creon' && !['win32','win64'].includes(e.os))
+    w.push('대신 CREON은 Windows 전용입니다');
+  if (e.tf === 'tick' && e.mode === 'backtest')
+    w.push('틱 백테스트는 데이터 정밀도 한계 — 1분 이상 권장');
+  if (e.mode === 'live' && e.risk === 'aggressive')
+    w.push('실전 + 공격적 — 사전 백테스트 필수');
+  if (e.strategy === 'bsi' && e.market !== 'kr-stock')
+    w.push('BSI 전략은 한국 주식 체결강도 데이터를 사용합니다');
+  if (e.strategy === 'theme' && e.market === 'crypto')
+    w.push('테마 전략은 주식 시장에 더 적합합니다');
+  return w;
+}
+
+function renderBrokerOpts() {
+  const wrap = $('#env-brokers');
+  wrap.innerHTML = '';
+  const list = BROKERS[envDraft.market] || [];
+  list.forEach(b => {
+    const compatible = b.os.includes(envDraft.os);
+    const btn = document.createElement('button');
+    btn.className = 'env-opt' +
+      (envDraft.broker === b.id ? ' selected' : '') +
+      (compatible ? '' : ' disabled');
+    btn.dataset.group = 'broker';
+    btn.dataset.value = b.id;
+    btn.innerHTML = `<span class="name">${b.name}</span><span class="meta">${b.meta}</span>`;
+    btn.addEventListener('click', () => {
+      if (btn.classList.contains('disabled')) return;
+      envDraft.broker = b.id;
+      renderEnvModal();
+    });
+    wrap.appendChild(btn);
+  });
+  if (!list.find(b => b.id === envDraft.broker)) {
+    const first = list.find(b => b.os.includes(envDraft.os)) || list[0];
+    envDraft.broker = first ? first.id : null;
+  }
+}
+
+function renderEnvModal() {
+  $$('#modal-env .env-opt').forEach(b => {
+    const g = b.dataset.group, v = b.dataset.value;
+    if (!g || !v || g === 'broker') return;
+    b.classList.toggle('selected', envDraft[g] === v);
+  });
+  renderBrokerOpts();
+  const w = validateEnv(envDraft);
+  const wEl = $('#env-warning');
+  if (w.length) {
+    wEl.classList.remove('hidden');
+    wEl.innerHTML = w.join('<br>');
+  } else {
+    wEl.classList.add('hidden');
+  }
+}
+
+function renderEnvSummary() {
+  const labs = {
+    market: { 'kr-stock': '한국주식', 'us-stock': '미국주식', 'crypto': '크립토', 'futures': '선물' },
+    os: { win64: 'Win64', win32: 'Win32', mac: 'macOS', linux: 'Linux', docker: 'Docker', cloud: 'Cloud' },
+    tf: { tick: '틱', '1m': '1분', '15m': '15분', day: '일봉', week: '주봉', event: '이벤트' },
+    mode: { paper: '모의', backtest: 'BT', 'live-small': '실전S', live: '실전' },
+    risk: { conservative: '보수', balanced: '균형', aggressive: '공격', custom: '커스텀' },
+    strategy: { orb: 'ORB', trend: '추세', meanrev: '회귀', bsi: 'BSI', theme: '테마', quant: '퀀트' },
+  };
+  const broker = (BROKERS[env.market] || []).find(b => b.id === env.broker)?.name || '?';
+  $('#env-summary').textContent =
+    `${labs.market[env.market]} | ${broker} | ${labs.os[env.os]} | ${labs.strategy[env.strategy]}/${labs.tf[env.tf]} | ${labs.mode[env.mode]}`;
+}
+
+function envContext() {
+  const labs = {
+    market: { 'kr-stock': '한국 주식 (KOSPI/KOSDAQ)', 'us-stock': '미국 주식', 'crypto': '크립토 perpetual', 'futures': '선물·옵션' },
+    os: { win64: 'Win64', win32: 'Win32 (OCX 호환)', mac: 'macOS', linux: 'Linux', docker: 'Docker', cloud: 'Cloud' },
+    tf: { tick: '틱/1초', '1m': '1~5분봉', '15m': '15분~1시간봉', day: '일봉', week: '주/월봉', event: '이벤트 기반' },
+    mode: { paper: '모의투자', backtest: '백테스트', 'live-small': '실전 소액', live: '실전 정상 자본' },
+    risk: { conservative: '보수 (SL 0.3%, R:R 1:2)', balanced: '균형 (SL 0.7%, R:R 1:2.5)', aggressive: '공격 (SL 1.5%, R:R 1:3)', custom: '커스텀' },
+    strategy: { orb: 'ORB', trend: '추세', meanrev: '평균 회귀', bsi: 'BSI', theme: '테마', quant: '팩터' },
+  };
+  const broker = (BROKERS[env.market] || []).find(b => b.id === env.broker)?.name || env.broker;
+  return [
+    `시장: ${labs.market[env.market]}`,
+    `브로커: ${broker}`,
+    `OS: ${labs.os[env.os]}`,
+    `TF: ${labs.tf[env.tf]}`,
+    `모드: ${labs.mode[env.mode]}`,
+    `리스크: ${labs.risk[env.risk]}`,
+    `전략: ${labs.strategy[env.strategy]}`,
+  ].join(' / ');
+}
+
+$('#env-mini').addEventListener('click', () => {
+  envDraft = { ...env };
+  renderEnvModal();
+  openModal('modal-env');
+});
+
+$$('#modal-env .env-opt').forEach(b => {
+  if (!b.dataset.group || b.dataset.group === 'broker') return;
+  b.addEventListener('click', () => {
+    envDraft[b.dataset.group] = b.dataset.value;
+    renderEnvModal();
+  });
+});
+
+$('#env-reset').addEventListener('click', () => {
+  envDraft = { ...DEFAULT_ENV };
+  renderEnvModal();
+});
+
+$('#env-apply').addEventListener('click', () => {
+  const ws = validateEnv(envDraft);
+  if (ws.find(w => w.includes('OpenAPI+(OCX)'))) {
+    log('ENV', '호환성 차단 — 적용 불가', 'error');
+    return;
+  }
+  env = { ...envDraft };
+  renderEnvSummary();
+  closeModal('modal-env');
+  log('ENV', `${env.broker} / ${env.os} / ${env.strategy}/${env.tf} / ${env.mode}`, 'success');
+  speak('환경 설정 완료, 보스.');
+});
+
+// ─── 인텐트 분류 (만능 비서 v3 — 13개 도메인) ───
+const INTENT_MAP = [
+  // 📅 일상·시간 도메인
+  { intent: 'time_now',     kws: ['지금 몇시', '몇 시', '지금 시간', '현재 시간', '시간 좀'] },
+  { intent: 'date_today',   kws: ['오늘 며칠', '오늘 무슨 요일', '오늘 날짜', '며칠이야'] },
+  { intent: 'weather',      kws: ['날씨', '오늘 비', '내일 비', '기온', '온도', '미세먼지'] },
+  { intent: 'alarm_set',    kws: ['알람', '알람 맞춰', '깨워', '일어나게 해'] },
+  { intent: 'timer_set',    kws: ['타이머', '분 후', '초 후', '시간 재'] },
+  { intent: 'memo',         kws: ['메모', '적어둬', '기록해'] },
+  { intent: 'schedule',     kws: ['일정', '오늘 뭐 있', '내일 뭐', '미팅', '약속'] },
+
+  // 💬 대화·일상 도메인
+  { intent: 'greeting',     kws: ['안녕', '하이', 'hello', 'hi', '굿모닝', '안녕하세요'] },
+  { intent: 'farewell',     kws: ['잘자', '굿나잇', '바이', 'bye', '잘 가', '내일 봐'] },
+  { intent: 'thanks',       kws: ['고마워', '땡큐', 'thanks', '감사'] },
+  { intent: 'joke',         kws: ['농담', '재밌는 얘기', '웃긴 얘기', '유머'] },
+  { intent: 'compliment',   kws: ['칭찬', '잘했어', '잘 해'] },
+  { intent: 'how_are_you',  kws: ['어때', '잘 있었', '뭐해'] },
+
+  // 🔍 지식·정보 도메인
+  { intent: 'web_search',   kws: ['검색', '찾아', '알려줘', '뭐야', '뭔가요', '설명해', '알아봐'] },
+  { intent: 'wiki',         kws: ['위키', '백과사전', '에 대해'] },
+  { intent: 'translate',    kws: ['번역', '영어로', '한국어로', '뜻이 뭐'] },
+  { intent: 'calculate',    kws: ['계산', '곱하기', '나누기', '더하기', '빼기', '얼마야', '몇이야'] },
+  { intent: 'news',         kws: ['뉴스', '오늘 뉴스', '속보', '소식'] },
+  { intent: 'define',       kws: ['뜻이', '정의', '의미가'] },
+
+  // 🛠 창작·작업 도메인
+  { intent: 'write_text',   kws: ['써줘', '글 써', '편지 써', '시 써', '작성', '초안'] },
+  { intent: 'summarize',    kws: ['요약', '간추려', '정리해줘', '짧게'] },
+  { intent: 'idea',         kws: ['아이디어', '제안', '추천해', '뭐가 좋'] },
+  { intent: 'brainstorm',   kws: ['아이디어', '구상', '브레인스토밍', '설계'] },
+  { intent: 'code_help',    kws: ['코드', '디버그', '버그', '에러', '왜 안돼', '안 돌아'] },
+
+  // 🏠 IoT·환경 도메인 (시뮬)
+  { intent: 'lights',       kws: ['불 켜', '불 꺼', '조명', '라이트'] },
+  { intent: 'music_play',   kws: ['음악 틀', '노래 틀', '음악 켜', '플레이리스트'] },
+  { intent: 'music_stop',   kws: ['음악 꺼', '노래 꺼', '음악 멈춰', '소리 꺼'] },
+  { intent: 'volume',       kws: ['소리', '볼륨', '크게', '작게', '음량'] },
+  { intent: 'tv_control',   kws: ['티비', 'TV', '텔레비전 켜', '텔레비전 꺼'] },
+
+  // 📞 통신 도메인
+  { intent: 'call',         kws: ['전화 걸', '통화', '전화해'] },
+  { intent: 'message',      kws: ['문자', '메시지 보내', '카톡'] },
+
+  // 🛡 보안·시각 도메인
+  { intent: 'camera_view',  kws: ['카메라 보여', '카메라 켜', '주변 보여', '얼굴 봐'] },
+  { intent: 'security',     kws: ['보안', '경비', '잠궈', '문 잠'] },
+
+  // 💊 건강 도메인
+  { intent: 'health',       kws: ['건강', '운동', '몸 상태', '심박'] },
+  { intent: 'reminder_meds',kws: ['약 먹', '약 알람', '비타민'] },
+
+  // 🎮 게임·미디어 도메인
+  { intent: 'mode_game',    kws: ['롤', '게임', '배그'] },
+  { intent: 'mode_work',    kws: ['일 시작', '업무', '편집', '캡컷', '방송'] },
+
+  // 📊 트레이딩 도메인 (보스 전용 — 유지)
+  { intent: 'market_query', kws: ['비트', '이더', '솔라나', '리플', '도지', 'btc', 'eth', '시세', '가격', '환율', '코스피'] },
+  { intent: 'code_generate',kws: ['코드 짜', '코드 만들', '코드 생성', '구현해', '키움', 'okx', 'binance', '파인', '트레이딩 코드'] },
+  { intent: 'db_analyze',   kws: ['디비', 'db', 'bsi', '거래 분석', '트레이드 분석'] },
+  { intent: 'csv_screen',   kws: ['저평가', '스크리닝', '종목 추천', '주식 추천'] },
+  { intent: 'self_heal',    kws: ['자가복구', '복구해', '직접 고쳐', 'heal'] },
+  { intent: 'system_status',kws: ['상태 보고', '시스템 상태', '시스템 점검', '센서 상태'] },
+];
+
+function classifyIntent(text) {
+  const t = (text || '').toLowerCase();
+  // 긴 키워드 우선 (더 구체적인 것)
+  const matches = [];
+  for (const e of INTENT_MAP) {
+    for (const k of e.kws) {
+      if (t.includes(k.toLowerCase())) {
+        matches.push({ intent: e.intent, len: k.length });
+        break;
+      }
+    }
+  }
+  if (matches.length === 0) return null;
+  matches.sort((a, b) => b.len - a.len);
+  return matches[0].intent;
+}
+
+function cmdToIntent(cmd) {
+  return {
+    // 일상
+    'time-ask': 'time_now',
+    'weather-ask': 'weather',
+    'schedule-ask': 'schedule',
+    'memo-add': 'memo',
+    // 대화
+    'greeting': 'greeting',
+    'joke': 'joke',
+    'how-are-you': 'how_are_you',
+    'compliment': 'compliment',
+    // 지식
+    'research': 'web_search',
+    'translate': 'translate',
+    'calculate': 'calculate',
+    'news': 'news',
+    // 창작
+    'write': 'write_text',
+    'summarize': 'summarize',
+    'brainstorm': 'brainstorm',
+    'debug': 'code_help',
+    // 스마트홈
+    'lights-on': 'lights',
+    'lights-off': 'lights',
+    'music-play': 'music_play',
+    'music-stop': 'music_stop',
+    'security': 'security',
+    // 트레이딩 (보스 전용)
+    'market': 'market_query',
+    'generate': 'code_generate',
+    'db': 'db_analyze',
+    'csv': 'csv_screen',
+    'self-heal': 'self_heal',
+    // 시스템
+    'status': 'system_status',
+    'clap': 'mode_game',
+    'bargein': 'bargein',
+  }[cmd];
+}
+
+function intentLabel(intent) {
+  return {
+    time_now: '시간 조회',
+    date_today: '날짜 조회',
+    weather: '날씨 조회',
+    schedule: '일정 확인',
+    memo: '메모',
+    alarm_set: '알람 설정',
+    timer_set: '타이머',
+    greeting: '인사',
+    farewell: '작별',
+    thanks: '감사',
+    joke: '농담',
+    compliment: '칭찬',
+    how_are_you: '안부',
+    web_search: '웹 검색',
+    wiki: '위키 조회',
+    translate: '번역',
+    calculate: '계산',
+    news: '뉴스',
+    define: '정의',
+    write_text: '글쓰기',
+    summarize: '요약',
+    idea: '아이디어',
+    brainstorm: '브레인스토밍',
+    code_help: '코드 디버깅',
+    lights: '조명 제어',
+    music_play: '음악 재생',
+    music_stop: '음악 정지',
+    volume: '볼륨 조절',
+    tv_control: 'TV 제어',
+    call: '전화',
+    message: '메시지',
+    camera_view: '카메라',
+    security: '보안',
+    health: '건강',
+    market_query: '시세 조회',
+    code_generate: '코드 생성',
+    db_analyze: 'DB 분석',
+    csv_screen: '종목 스크리닝',
+    self_heal: '자가복구',
+    system_status: '시스템 상태',
+    mode_game: '게임 모드',
+    mode_work: '업무 모드',
+    bargein: '발화 중단',
+  }[intent] || intent;
+}
+
+function cmdToText(cmd) {
+  return {
+    'time-ask': '지금 몇시야',
+    'weather-ask': '오늘 날씨 어때',
+    'schedule-ask': '오늘 일정 알려줘',
+    'memo-add': '메모 적어둬',
+    'greeting': '자비스 안녕',
+    'joke': '농담 하나 해봐',
+    'how-are-you': '자비스 어때',
+    'compliment': '나 잘했지',
+    'research': '오늘 시장 뉴스 검색해',
+    'translate': '"안녕하세요" 영어로 번역해',
+    'calculate': '127 곱하기 38 얼마야',
+    'news': '오늘 주요 뉴스 알려줘',
+    'write': '회의 사과 메일 초안 써줘',
+    'summarize': '이 문서 요약해',
+    'brainstorm': '새 사이드 프로젝트 아이디어 줘',
+    'debug': '이 에러 왜 나는지 분석해',
+    'lights-on': '거실 불 켜',
+    'lights-off': '거실 불 꺼',
+    'music-play': '음악 틀어줘',
+    'music-stop': '음악 꺼',
+    'security': '보안 모드 켜',
+    'status': '시스템 상태 보고해',
+    'market': '비트 가격 알려줘',
+    'generate': 'OKX ORB 코드 짜줘',
+    'db': 'BSI DB 분석해',
+    'csv': '저평가 종목 추천해',
+    'self-heal': '백테스트 자가복구',
+    'clap': '👏👏',
+    'bargein': '잠깐!',
+  }[cmd] || cmd;
+}
+
+// ─── 4단계 파이프라인 (PLAN → ROUTE → EXEC → RESPOND) ───
+async function runPipeline(intent, userText) {
+  resetPipeline();
+
+  // STAGE 1: PLAN
+  setPipeline(['plan']);
+  setState('thinking', 'TASK PLANNING');
+  log('PLAN', `의도 분해: ${intentLabel(intent)}`);
+  await sleep(500);
+  markPipelineDone('plan');
+
+  // STAGE 2: ROUTE (Tool/Skill 라우팅)
+  setPipeline(['route']);
+  setState('thinking', 'TOOL ROUTING');
+  log('ROUTE', `스킬 선택: ${intent}`);
+  await sleep(400);
+  markPipelineDone('route');
+
+  // STAGE 3: EXEC
+  setPipeline(['exec']);
+  setState('thinking', 'EXECUTING');
+  await sleep(300);
+  await executeIntent(intent, userText);
+  markPipelineDone('exec');
+
+  // STAGE 4: RESPOND
+  setPipeline(['resp']);
+  setState('speaking', 'TRANSMITTING');
+  await sleep(200);
+  markPipelineDone('resp');
+
+  setTimeout(() => {
+    resetPipeline();
+    setState('idle');
+  }, 1500);
+}
+
+// ─── 메인 디스패처 ─────────────────────────────────
+async function dispatch(cmd, freeText=null) {
+  unlockAudio();
+
+  if (cmd === 'bargein') {
+    log('INTERRUPT', 'TTS 강제 중단', 'warn');
+    stopTTS();
+    setYou('잠깐!');
+    // 잠시 후 인사
+    setTimeout(() => speak('네, 보스. 듣고 있습니다.'), 200);
+    setState('idle');
+    return;
+  }
+
+  if (isProcessing) {
+    log('SYS', '명령 처리 중 — 무시됨', 'warn');
+    return;
+  }
+  isProcessing = true;
+
+  try {
+    const text = freeText || cmdToText(cmd);
+    setYou(text);
+    setState('listening', 'TRANSCRIBING');
+    log('STT', `"${text}"`);
+    await sleep(450);
+
+    const intent = freeText ? classifyIntent(freeText) : cmdToIntent(cmd);
+    if (!intent) {
+      log('CLASSIFY', '의도 식별 실패', 'warn');
+      speak('명령을 이해하지 못했습니다, 보스.');
+      setState('idle');
+      return;
+    }
+    log('INTENT', `${intent} (${intentLabel(intent)})`, 'success');
+
+    await runPipeline(intent, text);
+  } finally {
+    isProcessing = false;
+  }
+}
+
+// ─── 인텐트별 실행 함수들 ──────────────────────────
+
+async function executeIntent(intent, text) {
+  switch (intent) {
+    // 일상
+    case 'time_now': return runTimeNow();
+    case 'date_today': return runDateToday();
+    case 'weather': return runWeather();
+    case 'schedule': return runSchedule();
+    case 'memo': return runMemo(text);
+    case 'alarm_set': return runAlarm(text);
+    case 'timer_set': return runTimer(text);
+
+    // 대화
+    case 'greeting': return runGreeting();
+    case 'farewell': return runFarewell();
+    case 'thanks': return runThanks();
+    case 'joke': return runJoke();
+    case 'compliment': return runCompliment();
+    case 'how_are_you': return runHowAreYou();
+
+    // 지식
+    case 'web_search': return runResearch(text);
+    case 'wiki': return runResearch(text);
+    case 'translate': return runTranslate(text);
+    case 'calculate': return runCalculate(text);
+    case 'news': return runNews();
+    case 'define': return runResearch(text);
+
+    // 창작
+    case 'write_text': return runWrite(text);
+    case 'summarize': return runSummarize(text);
+    case 'idea': return runBrainstorm();
+    case 'brainstorm': return runBrainstorm();
+    case 'code_help': return runDebug();
+
+    // 스마트홈
+    case 'lights': return runLights(text);
+    case 'music_play': return runMusicPlay();
+    case 'music_stop': return runMusicStop();
+    case 'volume': return runVolume(text);
+    case 'tv_control': return runTV(text);
+    case 'security': return runSecurity();
+
+    // 통신
+    case 'call': return runCall(text);
+    case 'message': return runMessage(text);
+
+    // 시각
+    case 'camera_view': return activateCamera();
+
+    // 건강
+    case 'health': return runHealth();
+    case 'reminder_meds': return runMemo(text);
+
+    // 트레이딩
+    case 'market_query': return runMarket(text);
+    case 'code_generate': return runGenerate();
+    case 'db_analyze': return runDB();
+    case 'csv_screen': return runCSV();
+    case 'self_heal': return runSelfHeal();
+    case 'system_status': return runSystemStatus();
+
+    // 모드
+    case 'mode_game': return runMode('game');
+    case 'mode_work': return runMode('work');
+
+    default: speak('명령을 이해하지 못했습니다, 보스.');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// 만능 도메인 핸들러들
+// ═══════════════════════════════════════════════════════
+
+// ━━━ 📅 일상 ━━━
+function runTimeNow() {
+  const d = new Date();
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const ampm = h < 12 ? '오전' : '오후';
+  const h12 = h % 12 || 12;
+  log('TIME', d.toString());
+  speak(`${ampm} ${h12}시 ${m}분입니다, 보스.`);
+}
+
+function runDateToday() {
+  const d = new Date();
+  const days = ['일','월','화','수','목','금','토'];
+  const text = `${d.getMonth()+1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`;
+  log('DATE', text);
+  speak(`오늘은 ${text}입니다, 보스.`);
+}
+
+async function runWeather() {
+  log('WEATHER', '위치 확인 + OpenWeather API (시뮬)');
+  await sleep(700);
+  // 실제 환경에서는 navigator.geolocation + fetch(OpenWeather)
+  const samples = [
+    { temp: 18, cond: '맑음', dust: '보통' },
+    { temp: 14, cond: '흐림', dust: '나쁨' },
+    { temp: 22, cond: '구름 조금', dust: '좋음' },
+  ];
+  const w = samples[Math.floor(Math.random() * samples.length)];
+  log('WEATHER', `대구 · ${w.temp}°C · ${w.cond} · 미세먼지 ${w.dust}`, 'success');
+  speak(`현재 대구 ${w.temp}도, ${w.cond}, 미세먼지 ${w.dust}입니다, 보스.`);
+}
+
+async function runSchedule() {
+  log('CAL', 'Google Calendar API (시뮬)');
+  await sleep(500);
+  const events = [
+    '14:00 — 트레이딩 전략 리뷰',
+    '16:30 — DEXTER 코드 푸시',
+    '20:00 — 운동 30분',
+  ];
+  for (const e of events) log('CAL', e, 'success');
+  speak('오늘 일정은 세 건입니다, 보스. 14시 전략 리뷰부터 시작하시면 됩니다.');
+}
+
+function runMemo(text) {
+  // 음성에서 "메모 적어둬, X" 패턴 추출
+  const m = text.replace(/.*?(메모|적어둬|기록해)[,\s]*/, '').trim();
+  const note = m || '(빈 메모)';
+  const stored = JSON.parse(localStorage.getItem('jarvis_memos') || '[]');
+  stored.push({ ts: new Date().toISOString(), text: note });
+  localStorage.setItem('jarvis_memos', JSON.stringify(stored));
+  log('NOTE', `저장: ${note}`, 'success');
+  speak('메모 저장했습니다, 보스.');
+}
+
+function runAlarm(text) {
+  log('ALARM', `요청: ${text}`);
+  speak('알람 설정했습니다, 보스.');
+}
+
+function runTimer(text) {
+  log('TIMER', `요청: ${text}`);
+  speak('타이머 시작합니다, 보스.');
+}
+
+// ━━━ 💬 대화 ━━━
+const GREETINGS = [
+  'Good day, sir. 오늘도 함께하게 되어 영광입니다.',
+  'Welcome back, sir. 보고드릴 사항이 몇 가지 있습니다.',
+  'At your service, 보스. 무엇을 도와드릴까요.',
+  'Good to see you again, sir. 모든 시스템 정상입니다.',
+  'Sir. 어떻게 도와드릴까요.',
+];
+function runGreeting() {
+  const g = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
+  speak(g);
+}
+
+function runFarewell() {
+  const r = [
+    'Good night, sir. 편안한 시간 되십시오.',
+    'Until next time, 보스.',
+    '편안한 시간 되십시오, 보스. 언제든 부르십시오.',
+  ];
+  speak(r[Math.floor(Math.random() * r.length)]);
+}
+
+function runThanks() {
+  const r = [
+    'My pleasure, sir.',
+    '천만에요, 보스. 그게 제 일입니다.',
+    "You're most welcome, 보스.",
+    '항상 기쁘게, 보스.',
+  ];
+  speak(r[Math.floor(Math.random() * r.length)]);
+}
+
+const JOKES = [
+  '프로그래머가 가장 무서워하는 단어는 "이상해, 내 컴퓨터에선 됐는데"입니다, 보스.',
+  '오류 메시지를 검색하면 결과가 한 건 나옵니다. 본인이 작년에 올린 질문이죠, 보스.',
+  '기계 학습이 어려운 이유는, 기계가 항상 학생이고 절대 졸업하지 않기 때문입니다, 보스.',
+  '코드에 주석을 다는 것은 미래의 자기 자신에게 보내는 사과 편지입니다, 보스.',
+  'Sir, 진정한 백업이란 세 곳에 두 가지 매체로 한 카피는 외부에 보관하는 것이라고 들었습니다. 저는 그 정도는 아니니 안심하시죠.',
+  'Sir, if I may — 사람들은 AI가 일자리를 빼앗을까 걱정하지만, 정작 저는 야근을 빼앗아드리려 노력 중입니다.',
+];
+function runJoke() {
+  const j = JOKES[Math.floor(Math.random() * JOKES.length)];
+  speak(j);
+}
+
+const COMPLIMENTS = [
+  'Quite impressive, sir. 오늘도 보스의 결정은 매우 합리적이었습니다.',
+  'Well done, 보스. 어제보다 한 걸음 나아가셨군요.',
+  '그 판단은 정확했습니다, 보스. 평소처럼요.',
+  'As expected, sir. 흠잡을 데가 없습니다.',
+];
+function runCompliment() {
+  speak(COMPLIMENTS[Math.floor(Math.random() * COMPLIMENTS.length)]);
+}
+
+function runHowAreYou() {
+  const r = [
+    'All systems nominal, sir. 그쪽은 어떠십니까.',
+    '시스템은 모두 정상입니다, 보스. 그쪽은 어떠십니까.',
+    '오늘도 보스를 보좌할 준비 완료입니다.',
+    "I'm functioning at peak capacity, sir. 보스를 보니 더더욱.",
+  ];
+  speak(r[Math.floor(Math.random() * r.length)]);
+}
+
+// ━━━ 🔍 지식 ━━━
+async function runTranslate(text) {
+  log('TRANSLATE', text.slice(0, 60));
+  await sleep(500);
+  // 간이 변환 데모 (실제는 DeepL/Google Translate API)
+  const samples = {
+    '안녕하세요': 'Hello, how are you',
+    '감사합니다': 'Thank you',
+    '사랑합니다': 'I love you',
+    'hello': '안녕하세요',
+  };
+  let result = '실제 환경에서는 DeepL API로 번역됩니다';
+  for (const [k, v] of Object.entries(samples)) {
+    if (text.includes(k)) { result = v; break; }
+  }
+  log('TRANSLATE', `→ ${result}`, 'success');
+  speak(`번역 결과: ${result}, 보스.`);
+}
+
+async function runCalculate(text) {
+  log('CALC', '수식 추출');
+  // 간단 한국어 수식 파서
+  const t = text
+    .replace(/곱하기|곱/g, '*')
+    .replace(/나누기|나눠/g, '/')
+    .replace(/더하기|플러스|에 더한|더한/g, '+')
+    .replace(/빼기|빼/g, '-')
+    .replace(/[^0-9+\-*/().\s]/g, ' ');
+  const m = t.match(/[\d.]+\s*[+\-*/]\s*[\d.]+(\s*[+\-*/]\s*[\d.]+)*/);
+  if (m) {
+    try {
+      // eslint-disable-next-line
+      const result = Function('"use strict";return (' + m[0] + ')')();
+      log('CALC', `${m[0]} = ${result}`, 'success');
+      speak(`결과는 ${result}입니다, 보스.`);
+      return;
+    } catch (e) {
+      log('CALC', '계산 실패', 'error');
+    }
+  }
+  speak('수식을 이해하지 못했습니다, 보스.');
+}
+
+async function runNews() {
+  log('NEWS', 'NewsAPI / 네이버 뉴스 (시뮬)');
+  await sleep(800);
+  const items = [
+    '코스피 2,640선 회복, 외국인 11일 연속 순매수',
+    '연준, 기준금리 동결 — 시장 안도',
+    'SK하이닉스, 엔비디아 GB300 공급 확정',
+    '서울 첫눈 관측, 내일 한파주의보',
+  ];
+  for (const n of items) log('NEWS', n, 'success');
+  $('#cn-analysis').innerHTML = items.map((n, i) => `<strong>${i+1}.</strong> ${n}`).join('<br><br>');
+  $$('.console-tab').forEach(t => t.classList.remove('active'));
+  $$('.tab-content').forEach(c => c.classList.remove('active'));
+  $('[data-tab="analysis"]').classList.add('active');
+  $('[data-content="analysis"]').classList.add('active');
+  openModal('modal-console');
+  speak('주요 뉴스 4건 확인했습니다, 보스.');
+}
+
+// ━━━ 🛠 창작 ━━━
+async function runWrite(text) {
+  log('SKILL', 'write_text 라우팅');
+  log('LLM', '문서 초안 생성');
+  await sleep(900);
+  $('#cn-analysis').innerHTML = `<strong>📄 초안</strong><br><br>
+안녕하세요,<br><br>
+요청하신 ${text.replace(/.*?(써줘|작성)[,\s]*/, '')}에 대한 초안을 작성했습니다.
+보스의 톤과 의도에 맞춰 다음과 같이 정리했습니다:<br><br>
+1. 핵심 메시지를 첫 문단에 명확히<br>
+2. 근거와 데이터는 두 번째 문단에<br>
+3. 다음 단계 또는 행동 요청을 마지막에<br><br>
+초안을 검토하시고 수정 방향 알려주십시오, 보스.`;
+  $$('.console-tab').forEach(t => t.classList.remove('active'));
+  $$('.tab-content').forEach(c => c.classList.remove('active'));
+  $('[data-tab="analysis"]').classList.add('active');
+  $('[data-content="analysis"]').classList.add('active');
+  openModal('modal-console');
+  speak('초안 준비됐습니다, 보스.');
+}
+
+async function runSummarize(text) {
+  log('SKILL', 'summarize 라우팅');
+  await sleep(700);
+  $('#cn-analysis').innerHTML = `<strong>📑 요약</strong><br><br>
+• 핵심 1: 가장 중요한 결정 포인트<br>
+• 핵심 2: 변경된 데이터 또는 수치<br>
+• 핵심 3: 다음 액션 아이템<br><br>
+원문 길이의 약 12%로 요약 완료, 보스.`;
+  $$('.console-tab').forEach(t => t.classList.remove('active'));
+  $$('.tab-content').forEach(c => c.classList.remove('active'));
+  $('[data-tab="analysis"]').classList.add('active');
+  $('[data-content="analysis"]').classList.add('active');
+  openModal('modal-console');
+  speak('요약 완료, 보스.');
+}
+
+// ━━━ 🏠 IoT (시뮬) ━━━
+async function runLights(text) {
+  const turnOn = /켜/.test(text);
+  log('IOT', `Philips Hue Bridge → 거실 조명 ${turnOn ? 'ON' : 'OFF'}`, 'success');
+  await sleep(400);
+  speak(turnOn ? '거실 조명 켰습니다, 보스.' : '거실 조명 껐습니다, 보스.');
+}
+
+async function runMusicPlay() {
+  log('MEDIA', 'Spotify API → 보스의 플레이리스트', 'success');
+  log('MEDIA', '재생: "Focus Beats" — Lofi Mix');
+  await sleep(400);
+  speak('음악 시작합니다, 보스. 집중하기 좋은 곡으로 골랐습니다.');
+}
+
+async function runMusicStop() {
+  log('MEDIA', 'Spotify pause', 'success');
+  speak('음악 멈췄습니다, 보스.');
+}
+
+async function runVolume(text) {
+  const up = /크게|올려/.test(text);
+  log('MEDIA', `볼륨 ${up ? '+10' : '-10'}`, 'success');
+  speak(up ? '볼륨 올렸습니다, 보스.' : '볼륨 낮췄습니다, 보스.');
+}
+
+async function runTV(text) {
+  const on = /켜/.test(text);
+  log('IOT', `LG WebOS API → TV ${on ? 'ON' : 'OFF'}`, 'success');
+  speak(on ? '텔레비전 켰습니다, 보스.' : '텔레비전 껐습니다, 보스.');
+}
+
+async function runSecurity() {
+  log('SEC', '현관 잠금 확인 → OK', 'success');
+  log('SEC', '베란다 창문 → OK', 'success');
+  log('SEC', '전체 보안 모드 활성', 'success');
+  await sleep(800);
+  speak('보안 모드 활성화. 모든 출입구 잠금 확인했습니다, 보스.');
+}
+
+// ━━━ 📞 통신 ━━━
+async function runCall(text) {
+  log('CALL', `요청: ${text}`);
+  speak('전화 연결합니다, 보스.');
+}
+
+async function runMessage(text) {
+  log('MSG', `요청: ${text}`);
+  speak('메시지 전송했습니다, 보스.');
+}
+
+// ━━━ 💊 건강 ━━━
+async function runHealth() {
+  log('HEALTH', '심박수: 72 BPM (정상)', 'success');
+  log('HEALTH', '오늘 걸음: 4,820', 'success');
+  log('HEALTH', '수면: 6시간 24분 (-26분)');
+  await sleep(600);
+  speak('건강 지표 모두 정상입니다, 보스. 다만 어제 수면이 다소 부족했습니다.');
+}
+
+// ━━━ 시스템 상태 ━━━
+async function runSystemStatus() {
+  const items = [
+    ['CORE', '정상', 'success'],
+    ['INTENT JUDGE', '준비', 'success'],
+    ['SKILL LIBRARY', '11개 로드', 'success'],
+    ['TOOL ROUTER', '활성', 'success'],
+    ['LLM PROVIDER', 'OpenRouter (Gemini)', 'success'],
+    ['STT ENGINE', recognitionActive ? '활성 · ko-KR 청취 중' : '대기 (마이크 OFF)', recognitionActive ? 'success' : 'warn'],
+    ['TTS VOICE', pickedVoice ? `${pickedVoice.name} (pitch 0.85)` : '브라우저 기본', 'success'],
+    ['MIC SENSOR', micActive ? `활성 · 박수 감지 ARMED` : 'OFFLINE', micActive ? 'success' : ''],
+    ['CAMERA', camActive ? '활성 · 모션 감지 ON' : 'OFFLINE', camActive ? 'success' : ''],
+    ['MCP CLIENT', '대기', ''],
+    ['SELF-HEAL', '대기 (max 3 시도)', ''],
+  ];
+  for (const [k, v, kind] of items) {
+    log(k, v, kind);
+    await sleep(140);
+  }
+  speak('모든 시스템 정상, 보스.');
+}
+
+// ━━━ 시세 (실제 OKX API) ━━━
+async function runMarket(text) {
+  let inst = 'BTC-USDT';
+  if (/이더|eth/i.test(text)) inst = 'ETH-USDT';
+  else if (/솔라나|sol/i.test(text)) inst = 'SOL-USDT';
+  else if (/리플|xrp/i.test(text)) inst = 'XRP-USDT';
+  else if (/도지/i.test(text)) inst = 'DOGE-USDT';
+
+  log('OKX', `GET market/ticker?instId=${inst}`);
+
+  try {
+    const r = await fetch(`https://www.okx.com/api/v5/market/ticker?instId=${inst}`, { mode: 'cors' });
+    const d = await r.json();
+    if (d.code !== '0' || !d.data?.[0]) throw new Error('no data');
+    const t = d.data[0];
+    const last = parseFloat(t.last);
+    const open24 = parseFloat(t.open24h);
+    const chg = (last / open24 - 1) * 100;
+    log('OKX', `← ${last} (${chg.toFixed(2)}%)`, 'success');
+
+    const card = document.createElement('div');
+    card.className = 'market-card';
+    card.innerHTML = `
+      <div class="market-symbol">${inst}</div>
+      <div class="market-price">$${last.toLocaleString('en-US', {maximumFractionDigits: 2})}</div>
+      <div class="market-change ${chg >= 0 ? 'up' : 'down'}">
+        ${chg >= 0 ? '▲' : '▼'} ${Math.abs(chg).toFixed(2)}%  · 24H
+      </div>`;
+    logEl.parentElement.parentElement.insertBefore(card, logEl.parentElement);
+    setTimeout(() => card.remove(), 14000);
+
+    speak(`${last.toFixed(0)}달러, 보스.`);
+  } catch (e) {
+    log('OKX', '실패: ' + e.message, 'error');
+    speak('시세 조회 실패, 보스.');
+  }
+}
+
+// ━━━ 코드 생성 (환경 반영) ━━━
+async function runGenerate() {
+  log('SKILL', `${env.broker}_orb 라우팅`, 'success');
+  log('ENV', envContext());
+  await sleep(800);
+  log('LLM', 'SKILL.md + 환경 컨텍스트 → 모델 호출');
+  await sleep(1000);
+
+  const code = highlightPython(generateCodeForEnv());
+  $('#cn-code').innerHTML = code;
+  log('WS', `~/.dexter/workspace/__${env.broker}/`, 'success');
+  log('SAVE', 'output.py + meta.json + commentary.md', 'success');
+  openModal('modal-console');
+  speak('코드 생성 완료, 보스.');
+}
+
+function generateCodeForEnv() {
+  const header = `"""
+J.A.R.V.I.S 자동 생성 — 환경 컨텍스트
+${envContext()}
+"""
+
+`;
+  if (env.broker === 'kiwoom-ocx') {
+    return header + `from PyQt5.QAxContainer import QAxWidget
+from PyQt5.QtCore import QEventLoop
+
+class KiwoomORB(QAxWidget):
+    """키움 OpenAPI+ ORB (32-bit Win 전용)"""
+    def __init__(self, account, mock=${env.mode === 'paper' ? 'True' : 'False'}):
+        super().__init__()
+        self.setControl("KHOPENAPI.KHOpenAPICtrl.1")
+        self.OnEventConnect.connect(self._on_connect)
+        self.account = account
+        self.mock = mock
+        # 09:00-09:15 KST OR / 14:10 강제청산
+        # ${riskParams()}`;
+  }
+  if (env.broker === 'okx' || env.broker === 'okx-futures') {
+    return header + `import os, hmac, base64, hashlib, requests
+import pandas as pd
+
+INSTRUMENT = "ETH-USDT-SWAP"
+LEVERAGE = ${env.risk === 'aggressive' ? 20 : env.risk === 'conservative' ? 5 : 10}
+${riskParamsAsCode()}
+
+def supertrend(df, length=10, mult=3.0):
+    """TradingView ta.supertrend 호환 (Wilder's RMA)"""
+    h, l, c = df["high"], df["low"], df["close"]
+    tr = pd.concat([h-l, (h-c.shift()).abs(), (l-c.shift()).abs()], axis=1).max(axis=1)
+    atr = tr.ewm(alpha=1/length, adjust=False).mean()
+    hl2 = (h + l) / 2
+    return atr, hl2 + mult * atr, hl2 - mult * atr
+
+if __name__ == "__main__":
+    # ${env.mode === 'paper' ? 'PAPER MODE' : 'LIVE MODE — 주의'}
+    df = pd.read_csv("eth_15m.csv", parse_dates=["timestamp"])
+    df["atr"], df["upper"], df["lower"] = supertrend(df)
+    print(df.tail())`;
+  }
+  if (env.broker === 'binance') {
+    return header + `import os, ccxt
+
+exchange = ccxt.binance({
+    "apiKey": os.environ["BINANCE_KEY"],
+    "secret": os.environ["BINANCE_SECRET"],
+    "options": {"defaultType": "future"},
+    "enableRateLimit": True,
+})
+${env.mode === 'paper' ? 'exchange.set_sandbox_mode(True)' : ''}
+${riskParamsAsCode()}
+
+candles = exchange.fetch_ohlcv("BTC/USDT", "${env.tf === '1m' ? '1m' : env.tf === '15m' ? '15m' : '1h'}", limit=500)
+# ${strategyLabel()} 시그널 평가...`;
+  }
+  if (env.broker === 'kiwoom-rest' || env.broker === 'kis') {
+    const broker = env.broker === 'kis' ? '한국투자증권' : '키움 REST';
+    return header + `import os, requests
+from dataclasses import dataclass
+
+@dataclass
+class Cfg:
+    """${broker} REST API + ${strategyLabel()}"""
+    app_key: str = os.environ["APP_KEY"]
+    app_secret: str = os.environ["APP_SECRET"]
+    account: str = os.environ["ACCOUNT_NO"]
+    mock: bool = ${env.mode === 'paper' ? 'True' : 'False'}
+    base: str = "${env.broker === 'kis' ? 'https://openapi.koreainvestment.com:9443' : 'https://api.kiwoom.com'}"
+
+${riskParamsAsCode()}
+
+def issue_token(cfg):
+    r = requests.post(f"{cfg.base}/oauth2/tokenP", json={
+        "grant_type": "client_credentials",
+        "appkey": cfg.app_key, "appsecret": cfg.app_secret,
+    })
+    return r.json()["access_token"]`;
+  }
+  if (env.broker === 'ibkr' || env.broker === 'ibkr-futures') {
+    return header + `from ib_insync import IB, Stock, MarketOrder
+
+ib = IB()
+ib.connect("127.0.0.1", ${env.mode === 'paper' ? 7497 : 7496}, clientId=1)
+
+contract = Stock("AAPL", "SMART", "USD")
+${riskParamsAsCode()}
+
+# ${strategyLabel()} on ${tfLabel()}
+bars = ib.reqHistoricalData(contract, endDateTime="", durationStr="2 D",
+                             barSizeSetting="${env.tf === '1m' ? '1 min' : env.tf === '15m' ? '15 mins' : '1 hour'}",
+                             whatToShow="TRADES", useRTH=True)`;
+  }
+  if (env.broker === 'alpaca') {
+    return header + `import os
+from alpaca.trading.client import TradingClient
+from alpaca.data.historical import StockHistoricalDataClient
+from alpaca.data.timeframe import TimeFrame
+
+trading = TradingClient(
+    api_key=os.environ["ALPACA_KEY"],
+    secret_key=os.environ["ALPACA_SECRET"],
+    paper=${env.mode === 'paper' ? 'True' : 'False'},
+)
+
+${riskParamsAsCode()}
+TF = ${env.tf === '1m' ? 'TimeFrame.Minute' : env.tf === '15m' ? 'TimeFrame(15, "Min")' : 'TimeFrame.Hour'}
+
+# ${strategyLabel()} 실행
+account = trading.get_account()
+print(f"buying_power: {account.buying_power}")`;
+  }
+
+  return header + `# ${env.broker} 미정의\n${riskParamsAsCode()}\n\nprint("환경: ${env.broker} / ${env.os}")`;
+}
+
+function strategyLabel() {
+  return {orb:'ORB', trend:'추세 추종', meanrev:'평균 회귀', bsi:'BSI', theme:'테마', quant:'팩터'}[env.strategy] || env.strategy;
+}
+function tfLabel() {
+  return {tick:'틱', '1m':'1~5분봉', '15m':'15분봉', day:'일봉', week:'주봉', event:'이벤트'}[env.tf] || env.tf;
+}
+function riskParams() {
+  return {
+    conservative: 'SL 0.3% / R:R 1:2 / 포지션 10%',
+    balanced: 'SL 0.7% / R:R 1:2.5 / 포지션 20%',
+    aggressive: 'SL 1.5% / R:R 1:3 / 포지션 30%',
+    custom: '커스텀',
+  }[env.risk];
+}
+function riskParamsAsCode() {
+  const m = {
+    conservative: { sl: 0.003, rr: 2.0, pos: 0.10 },
+    balanced:     { sl: 0.007, rr: 2.5, pos: 0.20 },
+    aggressive:   { sl: 0.015, rr: 3.0, pos: 0.30 },
+    custom:       { sl: 0.005, rr: 2.0, pos: 0.15 },
+  }[env.risk];
+  return `SL_PCT = ${m.sl}        # 손절 ${(m.sl*100).toFixed(2)}%
+RR_RATIO = ${m.rr}        # 손익비
+POSITION_PCT = ${m.pos}   # 포지션 ${(m.pos*100).toFixed(0)}%`;
+}
+
+// ━━━ DB 분석 ━━━
+async function runDB() {
+  log('SKILL', 'db_analyze 라우팅');
+  const stages = [
+    'sqlite3 연결: bsi_trade.db',
+    '테이블 스캔: trades (343 rows)',
+    'pnl 컬럼 집계',
+    '시간대 분포',
+    '섹터별 집계',
+    'BSI 컬럼 검증'
+  ];
+  for (const s of stages) { log('DB', s); await sleep(280); }
+
+  $('#cn-result').textContent = `# 거래 분석 (8단계)
+
+## 1) 전체 통계
+- 거래수: 343 / 승: 142 / 패: 201
+- 승률: 41.40%
+- 누적 손익: -2,847,300원
+- 평균 수익: -8,300원
+- 최대 익절: +320,000 / 최대 손절: -480,000
+- 평균 보유시간: 12.4분
+
+## 2) 시간대 분포
+- 09시: 87건 (최다) — 전체 25.4%
+- 10시: 64건 / 11시: 41건 / 13~14시: 38건
+- 분포 편향 — 분산 재배치 필요
+
+## 3) 핵심 문제
+1. 승률 41.4% — 진입 시그널 정확도 부족
+2. 최대 손절 / 최대 익절 = 1.5배 이상 비대칭
+3. 평균 보유 12분 — 슬리피지·수수료 부담
+
+## 4) 패턴 분석
+- 최장 연승: 4회 / 최장 연패: 7회
+- 09시 진입 승률 32% (최저)
+- 14시 진입 승률 58% (최고)
+
+## 5) BSI 지표 이슈
+- BSI 컬럼: bsi_entry, bsi_exit
+- 진입 BSI 평균: 승 73.2 / 패 68.8
+- **컷오프 70 권장** (현재 60)
+
+## 6) 구체적 개선 제안
+1. SL = ATR(14) × 1.2 고정
+2. 09시 진입 차단
+3. 연패 5회시 24시간 자동 휴식
+4. BSI < 70 진입 차단
+5. net_pnl 컬럼 (수수료/슬리피지 반영)
+
+## 7) 섹터별 손익 TOP 5
+| 섹터 | 누적 |
+|---|---|
+| 반도체 | +1,240,000 |
+| 2차전지 | +890,000 |
+| 조선 | +740,000 |
+| 엔터 | -1,580,000 |
+| 바이오 | -2,100,000 |
+
+## 8) 내일 강세 예상
+- **2차전지**: LG에너지솔루션 호재 + IRA 보조금
+- **반도체**: HBM 수급 + 외국인 11일 순매수
+- 진입 BSI 컷오프 75 권장`;
+
+  $$('.console-tab').forEach(t => t.classList.remove('active'));
+  $$('.tab-content').forEach(c => c.classList.remove('active'));
+  $('[data-tab="result"]').classList.add('active');
+  $('[data-content="result"]').classList.add('active');
+  openModal('modal-console');
+  speak('디비 분석 완료, 보스.');
+}
+
+// ━━━ CSV 스크리닝 ━━━
+async function runCSV() {
+  log('SKILL', 'csv_screen 라우팅');
+  log('CSV', '295종목 로드');
+  log('FILTER', 'BUY × 5/5 기준');
+  await sleep(700);
+  log('LLM', '오늘 시장 이슈 매칭 (반도체·2차전지)');
+  await sleep(700);
+
+  $('#cn-result').textContent = `# 저평가 종목 추천
+
+전체 295 / BUY 87 / 5/5 충족 12
+
+## 1. SK하이닉스 (000660)
+**📊** 현재가 184,500 | PER 7.2 | PBR 1.4 | ROE 18% | 목표 240,000 (+30%)
+**🔗** HBM3E 12단 양산 → 엔비디아 GB200 공급 본격화
+**🚀** 외국인 11일 순매수, 200일선 돌파, 60일선 GC 임박
+
+## 2. 에코프로비엠 (247540)
+**📊** 78,200 | PER 12.4 | PBR 1.2 | ROE 11% | 목표 105,000 (+34%)
+**🔗** LG엔솔 NCM 공급 67% + IRA 5조 확보
+**🚀** RSI 30 → 52 회복, 단기 추세 전환
+
+## 3. 한미반도체 (042700)
+**📊** 95,800 | PER 9.8 | PBR 1.8 | ROE 16% | 목표 130,000 (+36%)
+**🔗** HBM TC 본더 글로벌 1위, SK·마이크론 동시 수주
+**🚀** 1,200억 신규 수주 공시, OPM 사상 최대`;
+
+  $$('.console-tab').forEach(t => t.classList.remove('active'));
+  $$('.tab-content').forEach(c => c.classList.remove('active'));
+  $('[data-tab="result"]').classList.add('active');
+  $('[data-content="result"]').classList.add('active');
+  openModal('modal-console');
+  speak('저평가 후보 3종목, 보스.');
+}
+
+// ━━━ 브레인스토밍 ━━━
+async function runBrainstorm() {
+  log('SKILL', 'brainstorm 라우팅');
+  await sleep(800);
+  log('LLM', '시니어 엔지니어 페르소나 활성');
+  await sleep(900);
+
+  $('#cn-analysis').innerHTML = `<strong>🎯 한 줄</strong><br>
+${env.market} ${strategyLabel()} 자동매매 시스템 v2 구상<br><br>
+
+<strong>📦 컴포넌트 (5개)</strong><br>
+1. <strong>데이터 어댑터</strong> — ${env.broker} REST/WS<br>
+2. <strong>시그널 엔진</strong> — TradingView RMA 정합성<br>
+3. <strong>리스크 매니저</strong> — ${riskParams()}<br>
+4. <strong>실행기</strong> — ${env.mode === 'paper' ? 'paper' : 'live'} + 슬리피지 모델<br>
+5. <strong>모니터</strong> — Telegram 알림 + 자가복구<br><br>
+
+<strong>🚦 의사결정 포인트</strong><br>
+• OS는 ${env.os} 확정인지<br>
+• ${env.tf} 데이터 보유 여부 (없으면 1년 백필 필요)<br>
+• 실거래 자본 한도<br><br>
+
+<strong>⚠ 잠재 리스크</strong><br>
+• ${env.broker === 'kiwoom-ocx' ? 'TR 한도 1초 5건' : 'API rate limit'}<br>
+• ${env.market === 'crypto' ? '거래소 정전 / API 변경' : '장 마감 시간 슬리피지'}<br>
+• 백테스트 vs 실전 디커플링<br><br>
+
+<strong>▶ 다음</strong> "계획 세워" 라고 하시면 plan 스킬로 넘어갑니다, 보스.`;
+
+  $$('.console-tab').forEach(t => t.classList.remove('active'));
+  $$('.tab-content').forEach(c => c.classList.remove('active'));
+  $('[data-tab="analysis"]').classList.add('active');
+  $('[data-content="analysis"]').classList.add('active');
+  openModal('modal-console');
+  speak('아이디어 정리 완료, 보스.');
+}
+
+// ━━━ 디버그 ━━━
+async function runDebug() {
+  log('SKILL', 'debug 라우팅');
+  log('SCAN', '코드 + 트레이스백 분석');
+  await sleep(800);
+  log('LLM', '근본원인 가설 생성');
+  await sleep(800);
+
+  $('#cn-analysis').innerHTML = `<strong>1️⃣ 증상</strong><br>
+환경: ${env.os}, Python 3.11.6<br>
+재현: <code>python backtest.py --csv data.csv</code><br>
+실제: <code>KeyError: 'close'</code> on line 14<br><br>
+
+<strong>2️⃣ 근본원인 가설 (3개)</strong><br>
+<strong>A.</strong> CSV 컬럼명이 'Close' 또는 '종가'로 들어와 있음 (가능성 80%)<br>
+<strong>B.</strong> 타임존 미스매치로 첫 행이 NaN이 되어 컬럼 자체가 빠짐 (15%)<br>
+<strong>C.</strong> CSV 인코딩 문제로 헤더 깨짐 (5%)<br><br>
+
+<strong>3️⃣ 검증 + 수정 (가설 A)</strong><br>
+<pre>def find_close_col(df):
+    for c in df.columns:
+        if c.lower() in ('close', 'close_price', '종가'):
+            return c
+    raise ValueError(f"close 컬럼 없음: {df.columns.tolist()}")
+
+close_col = find_close_col(df)
+df['close'] = df[close_col]</pre><br>
+
+<strong>4️⃣ 회귀 방지</strong><br>
+• 단위 테스트: <code>tests/test_csv_loader.py::test_close_col_variants</code><br>
+• 체크리스트: "CSV 로드 시 컬럼명 lowercase 변환"`;
+
+  $$('.console-tab').forEach(t => t.classList.remove('active'));
+  $$('.tab-content').forEach(c => c.classList.remove('active'));
+  $('[data-tab="analysis"]').classList.add('active');
+  $('[data-content="analysis"]').classList.add('active');
+  openModal('modal-console');
+  speak('디버그 분석 완료, 보스.');
+}
+
+// ━━━ 웹 검색 ━━━
+async function runResearch(text) {
+  log('TOOL', 'web_search 호출');
+  log('QRY', text.slice(0, 50));
+  await sleep(700);
+  log('SRC', 'DuckDuckGo → Wikipedia fallback chain');
+  await sleep(900);
+  log('PARSE', '3건 발췌');
+  await sleep(500);
+
+  $('#cn-analysis').innerHTML = `<strong>🔍 검색 결과 — "${text}"</strong><br><br>
+
+<strong>1.</strong> <a href="#">SK하이닉스, 엔비디아 GB300 공급 확정</a><br>
+<em>전자신문 · 2시간 전</em><br>
+HBM4 12단 적층 기술 양산 시작, 4분기 매출 사상 최대 전망...<br><br>
+
+<strong>2.</strong> <a href="#">코스피 2,640선 회복, 외국인 11일 연속 순매수</a><br>
+<em>한국경제 · 5시간 전</em><br>
+반도체·2차전지 주도, 기관 동조 매수로 거래대금 17조 돌파...<br><br>
+
+<strong>3.</strong> <a href="#">에코프로비엠, 미국 IRA 보조금 5조 확보</a><br>
+<em>매일경제 · 1일 전</em><br>
+LG에너지솔루션 NCM 양극재 공급 비중 67%, 2026 가이던스 상향...`;
+
+  $$('.console-tab').forEach(t => t.classList.remove('active'));
+  $$('.tab-content').forEach(c => c.classList.remove('active'));
+  $('[data-tab="analysis"]').classList.add('active');
+  $('[data-content="analysis"]').classList.add('active');
+  openModal('modal-console');
+  speak('검색 완료, 보스.');
+}
+
+// ━━━ 모드 (게임/업무) ━━━
+async function runMode(mode) {
+  speak(mode === 'game' ? '게임 환경, 보스.' : '업무 환경, 보스.');
+  const apps = mode === 'game'
+    ? ['치지직', '게임 음악', 'op.gg', 'OBS', 'LeagueClient']
+    : ['CapCut', 'Claude', 'OBS', 'YouTube', 'Instagram', 'AI 뉴스'];
+  for (const a of apps) {
+    log('LAUNCH', a, 'success');
+    await sleep(450);
+  }
+  speak(`${mode === 'game' ? '게임' : '업무'} 환경 완료, 보스.`);
+}
+
+// ━━━ 자가복구 ━━━
+async function runSelfHeal() {
+  speak('백테스트 실행, 보스.');
+  log('ENV', envContext());
+  await sleep(700);
+  log('BT', 'subprocess 실행');
+  setState('thinking', 'EXECUTING');
+  await sleep(1200);
+  log('BT', '비정상 종료 (rc=1)', 'error');
+
+  setState('healing', 'SELF-HEALING');
+  $('#heal-stages').innerHTML = '';
+  $('#heal-close').classList.remove('show');
+  $('#heal-overlay').classList.add('show');
+  $('#heal-sub').textContent = "ModuleNotFoundError: No module named 'pandas'";
+
+  await sleep(800);
+  speak('라이브러리 누락, 분석 중, 보스.');
+
+  // 시도 1
+  await sleep(1300);
+  speak('복구 시도 중, 보스. 일차.');
+  const s1 = addHealStage(1, 'LLM 수정안 생성 중');
+  await fillBar(s1, 1700);
+  log('HEAL', '1차: pandas → csv 모듈 대체', 'heal');
+  speak('수정안 적용, 재실행, 보스.');
+  s1.querySelector('.heal-stage-msg').textContent = '재실행 중...';
+  await sleep(1100);
+
+  s1.classList.add('failed');
+  s1.querySelector('.heal-stage-status').textContent = '✕';
+  s1.querySelector('.heal-stage-msg').textContent =
+    "KeyError: 'close' (CSV 컬럼명 인식 실패)";
+  log('HEAL', "1차 실패: KeyError", 'error');
+  speak('일차 실패, 보스.');
+  await sleep(1100);
+
+  // 시도 2
+  speak('복구 시도 중, 보스. 이차.');
+  const s2 = addHealStage(2, '다른 접근: 컬럼 자동 탐지');
+  await fillBar(s2, 1900);
+  log('HEAL', '2차: 컬럼 자동 매핑 + .get() 방어', 'heal');
+  s2.querySelector('.heal-stage-msg').textContent = '재실행 중...';
+  await sleep(1300);
+
+  s2.classList.add('success');
+  s2.querySelector('.heal-stage-status').textContent = '✓';
+  s2.querySelector('.heal-stage-msg').textContent =
+    '실행 성공 — 누적수익률 +18.4%, MDD -7.2%, Sharpe 1.43';
+  log('HEAL', '2차 성공!', 'success');
+  log('WS', '~/.dexter/workspace/__heal/', 'success');
+  playSuccess();
+
+  $('#heal-sub').textContent = '✓ 복구 완료 (이차에서 성공)';
+  $('#heal-close').classList.add('show');
+  speak('복구 완료, 보스. 이차에서 성공.');
+
+  $('#cn-code').innerHTML = highlightPython(`"""백테스트 자가복구 v2 (성공)"""
+import csv
+
+def load_csv(path):
+    """컬럼명 자동 매핑 + 방어 코드"""
+    rows = []
+    with open(path, encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        close_key = next(
+            (k for k in reader.fieldnames
+             if k.lower() in ('close', '종가', 'close_price')),
+            None
+        )
+        if close_key is None:
+            raise ValueError(f"close 컬럼 없음: {reader.fieldnames}")
+        for row in reader:
+            rows.append({
+                'close': float(row.get(close_key, 0) or 0),
+                'high': float(row.get('high', row.get('High', 0)) or 0),
+                'low': float(row.get('low', row.get('Low', 0)) or 0),
+            })
+    return rows
+
+# SMA cross 백테스트
+def backtest(rows, short=10, long_=30):
+    closes = [r['close'] for r in rows]
+    equity = 1000.0
+    pos = 0
+    wins = losses = 0
+    for i in range(long_, len(closes)):
+        s_ma = sum(closes[i-short+1:i+1]) / short
+        l_ma = sum(closes[i-long_+1:i+1]) / long_
+        sig = 1 if s_ma > l_ma else 0
+        ret = (closes[i] / closes[i-1] - 1) if pos else 0
+        equity *= (1 + ret)
+        if pos and ret > 0: wins += 1
+        elif pos and ret < 0: losses += 1
+        pos = sig
+    return {
+        'final': equity,
+        'return_pct': (equity / 1000 - 1) * 100,
+        'win_rate': wins / (wins + losses) * 100 if (wins+losses) else 0,
+    }
+
+if __name__ == "__main__":
+    rows = load_csv("data.csv")
+    result = backtest(rows)
+    for k, v in result.items():
+        print(f"  {k}: {v}")`);
+}
+
+function addHealStage(n, msg) {
+  const div = document.createElement('div');
+  div.className = 'heal-stage active';
+  div.innerHTML = `
+    <div class="heal-stage-head">
+      <span class="heal-stage-num">ATTEMPT ${n}</span>
+      <span class="heal-stage-status">⚙</span>
+    </div>
+    <div class="heal-stage-msg">${msg}</div>
+    <div class="heal-stage-bar"><div class="heal-stage-bar-fill"></div></div>
+  `;
+  $('#heal-stages').appendChild(div);
+  return div;
+}
+
+async function fillBar(stage, ms) {
+  const bar = stage.querySelector('.heal-stage-bar-fill');
+  await sleep(50);
+  bar.style.transition = `width ${ms}ms ease`;
+  bar.style.width = '95%';
+  await sleep(ms);
+}
+
+$('#heal-close').addEventListener('click', () => {
+  $('#heal-overlay').classList.remove('show');
+  setState('idle');
+  openModal('modal-console');
+});
+
+// ─── 모달 ──────────────────────────────────────────
+function openModal(id) {
+  $('#' + id).classList.add('show');
+  playHudOpen();
+}
+function closeModal(id) {
+  $('#' + id).classList.remove('show');
+  playHudClose();
+}
+
+$$('[data-close]').forEach(b =>
+  b.addEventListener('click', () => closeModal(b.dataset.close))
+);
+$$('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) closeModal(o.id); });
+});
+
+$$('.console-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    $$('.console-tab').forEach(t => t.classList.remove('active'));
+    $$('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    $(`[data-content="${tab.dataset.tab}"]`).classList.add('active');
+  });
+});
+
+// ─── 신택스 하이라이팅 ────────────────────────────
+function escape(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function highlightPython(code) {
+  let s = escape(code);
+  s = s.replace(/(""".*?""")/gs, '<span class="cmt">$1</span>');
+  s = s.replace(/(#[^\n]*)/g, '<span class="cmt">$1</span>');
+  s = s.replace(/("[^"]*"|'[^']*')/g, '<span class="str">$1</span>');
+  s = s.replace(/\b(import|from|def|class|return|if|elif|else|for|while|in|with|as|None|True|False|pass|lambda|try|except|raise|not|and|or|is)\b/g, '<span class="kw">$1</span>');
+  s = s.replace(/\b(\d+\.?\d*)\b/g, '<span class="num">$1</span>');
+  return s;
+}
+
+// ─── 버튼 ──────────────────────────────────────────
+$$('.cmd').forEach(b => {
+  b.addEventListener('click', () => {
+    playBeep(2400, 0.04, 0.08);
+    dispatch(b.dataset.cmd);
+  });
+});
+
+$('#text-send').addEventListener('click', () => {
+  const t = $('#text-input').value.trim();
+  if (!t) return;
+  $('#text-input').value = '';
+  const intent = classifyIntent(t);
+  if (intent) {
+    // 인텐트를 직접 실행 (cmd 변환 없이)
+    setYou(t);
+    setState('listening', 'TRANSCRIBING');
+    log('STT', `"${t}"`);
+    setTimeout(async () => {
+      log('INTENT', `${intent} (${intentLabel(intent)})`, 'success');
+      await runPipeline(intent, t);
+    }, 350);
+  } else {
+    setYou(t);
+    speak('명령을 이해하지 못했습니다, 보스.');
+  }
+});
+$('#text-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') $('#text-send').click();
+});
+
+$('#audio-banner').addEventListener('click', unlockAudio);
+
+// ════════════════════════════════════════════════════════════
+// 🎵 JARVIS SOUND ENGINE — Web Audio API 기반 영화 자비스 사운드
+//    + GitHub의 실제 자비스 사운드팩 (KKshitiz/J.A.R.V.I.S)
+//    https://github.com/KKshitiz/J.A.R.V.I.S/tree/master/assets/sounds
+// ════════════════════════════════════════════════════════════
+let soundCtx = null;
+let masterGain = null;
+let ambientGain = null;
+let ambientNodes = [];
+let ambientPlaying = false;
+let soundEnabled = true;
+
+// GitHub의 실제 영화 자비스 사운드팩 (raw URL 직접 사용)
+// 2020년경 KKshitiz가 정리한 4개 wav. 브라우저에서 CORS 허용.
+const JARVIS_SOUND_URLS = {
+  start:     'https://raw.githubusercontent.com/KKshitiz/J.A.R.V.I.S/master/assets/sounds/start.wav',
+  end:       'https://raw.githubusercontent.com/KKshitiz/J.A.R.V.I.S/master/assets/sounds/end.wav',
+  listening: 'https://raw.githubusercontent.com/KKshitiz/J.A.R.V.I.S/master/assets/sounds/jarvislistening.wav',
+  working:   'https://raw.githubusercontent.com/KKshitiz/J.A.R.V.I.S/master/assets/sounds/jarvisworking.wav',
+};
+
+// 디코딩된 AudioBuffer 캐시
+const jarvisSoundBuffers = {};
+let soundsLoaded = false;
+
+// 외부 사운드 로드 (페이지 로드 후 백그라운드)
+// 일부 환경(Claude 미리보기 등)에서 외부 fetch가 차단될 수 있음 → 조용히 폴백
+async function loadJarvisSounds() {
+  const ctx = getSoundCtx();
+  const promises = Object.entries(JARVIS_SOUND_URLS).map(async ([key, url]) => {
+    try {
+      const r = await fetch(url, { mode: 'cors' });
+      if (!r.ok) return null;
+      const ab = await r.arrayBuffer();
+      const buf = await ctx.decodeAudioData(ab);
+      jarvisSoundBuffers[key] = buf;
+      return key;
+    } catch (e) {
+      // 외부 사운드 로드 실패 — 합성 사운드로 자동 폴백 (조용히)
+      return null;
+    }
+  });
+  const results = await Promise.all(promises);
+  const loaded = results.filter(Boolean);
+  if (loaded.length > 0) {
+    soundsLoaded = true;
+    log('SOUND', `자비스 사운드팩: ${loaded.length}/4 로드`, 'success');
+  } else {
+    // 합성 사운드만 사용 (정상 폴백)
+    log('SOUND', '합성 사운드 모드 (외부 사운드팩 미사용)', 'warn');
+  }
+}
+
+// 외부 자비스 사운드 재생
+function playJarvisSound(key, volume = 0.7) {
+  if (!soundEnabled) return false;
+  const buf = jarvisSoundBuffers[key];
+  if (!buf) return false;
+  const ctx = getSoundCtx();
+  const source = ctx.createBufferSource();
+  source.buffer = buf;
+  const g = ctx.createGain();
+  g.gain.value = volume;
+  source.connect(g).connect(masterGain);
+  source.start();
+  return true;
+}
+
+function getSoundCtx() {
+  if (!soundCtx) {
+    soundCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = soundCtx.createGain();
+    masterGain.gain.value = 0.5;
+    masterGain.connect(soundCtx.destination);
+  }
+  if (soundCtx.state === 'suspended') {
+    soundCtx.resume().catch(() => {});
+  }
+  return soundCtx;
+}
+
+// ─── 영화 자비스 앰비언트 험 (지속 배경음) ─────────
+// 낮은 드론 + 미세한 노이즈 + 천천히 변하는 필터
+function startAmbient() {
+  if (ambientPlaying) return;
+  const ctx = getSoundCtx();
+  ambientGain = ctx.createGain();
+  ambientGain.gain.value = 0;
+  ambientGain.connect(masterGain);
+
+  // 1. 깊은 드론 (60Hz + 90Hz + 120Hz 합)
+  [55, 82.5, 110].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const g = ctx.createGain();
+    g.gain.value = 0.08 / (i + 1);
+
+    // 미세한 LFO로 살짝 흔들리게
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = 0.1 + Math.random() * 0.15;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = freq * 0.005;
+    lfo.connect(lfoGain).connect(osc.frequency);
+    lfo.start();
+
+    osc.connect(g).connect(ambientGain);
+    osc.start();
+    ambientNodes.push(osc, lfo);
+  });
+
+  // 2. 미세한 백색 노이즈 (우주적 분위기)
+  const noiseBuffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const data = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) {
+    data[i] = (Math.random() - 0.5) * 0.5;
+  }
+  const noise = ctx.createBufferSource();
+  noise.buffer = noiseBuffer;
+  noise.loop = true;
+  // 로우패스로 깎아서 부드럽게
+  const noiseFilter = ctx.createBiquadFilter();
+  noiseFilter.type = 'lowpass';
+  noiseFilter.frequency.value = 800;
+  noiseFilter.Q.value = 0.5;
+  const noiseGain = ctx.createGain();
+  noiseGain.gain.value = 0.025;
+  noise.connect(noiseFilter).connect(noiseGain).connect(ambientGain);
+  noise.start();
+  ambientNodes.push(noise);
+
+  // 3. 가끔 들리는 데이터 펄스 (1~3초마다 짧은 비프)
+  function scheduleDataPulse() {
+    if (!ambientPlaying) return;
+    const delay = 2000 + Math.random() * 4000;
+    setTimeout(() => {
+      if (!ambientPlaying) return;
+      playDataPulse();
+      scheduleDataPulse();
+    }, delay);
+  }
+  scheduleDataPulse();
+
+  // 페이드 인
+  ambientGain.gain.linearRampToValueAtTime(0.7, ctx.currentTime + 1.5);
+  ambientPlaying = true;
+}
+
+function stopAmbient() {
+  if (!ambientPlaying || !ambientGain) return;
+  const ctx = getSoundCtx();
+  ambientGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+  setTimeout(() => {
+    ambientNodes.forEach(n => { try { n.stop(); } catch (e) {} });
+    ambientNodes = [];
+    ambientPlaying = false;
+  }, 600);
+}
+
+// ─── 데이터 펄스 (앰비언트 중 가끔 들림) ───────────
+function playDataPulse() {
+  if (!soundEnabled) return;
+  const ctx = getSoundCtx();
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.value = 1800 + Math.random() * 800;
+  const g = ctx.createGain();
+  g.gain.value = 0;
+  osc.connect(g).connect(masterGain);
+  const t = ctx.currentTime;
+  g.gain.linearRampToValueAtTime(0.04, t + 0.01);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.08);
+  osc.start(t);
+  osc.stop(t + 0.1);
+}
+
+// ─── UI 비프 (작은 버튼 클릭 등) ──────────────────
+function playBeep(freq=2400, duration=0.06, volume=0.12) {
+  if (!soundEnabled) return;
+  const ctx = getSoundCtx();
+  const osc = ctx.createOscillator();
+  osc.type = 'square';
+  osc.frequency.value = freq;
+  const g = ctx.createGain();
+  g.gain.value = 0;
+  osc.connect(g).connect(masterGain);
+  const t = ctx.currentTime;
+  g.gain.linearRampToValueAtTime(volume, t + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.001, t + duration);
+  osc.start(t);
+  osc.stop(t + duration + 0.02);
+}
+
+// ─── 활성화 사운드 (시스템 가동) — 영화 자비스 부팅음 정밀 재현 ───
+// 영상 zZ0tYNEv0cQ의 패턴: 낮은 험 → 데이터 스캔 → 메인 차임 → sustain
+function playActivate() {
+  if (!soundEnabled) return;
+  // 외부 사운드 시도 (성공하면 그것 사용)
+  if (playJarvisSound('start', 0.8)) return;
+
+  // 폴백: 영화 자비스 부팅음을 Web Audio로 정밀 재현
+  const ctx = getSoundCtx();
+  const t0 = ctx.currentTime;
+
+  // ━━ Phase 1 (0.0~0.5s): 낮은 부팅 험 (영화의 그 묵직한 시작) ━━
+  // 60Hz + 90Hz 두 사인파 + 약간의 노이즈
+  [60, 90, 120].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const g = ctx.createGain();
+    osc.connect(g).connect(masterGain);
+    g.gain.setValueAtTime(0, t0);
+    g.gain.linearRampToValueAtTime(0.18 / (i + 1), t0 + 0.4);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + 1.4);
+    osc.start(t0);
+    osc.stop(t0 + 1.5);
+  });
+
+  // 부팅 험에 살짝 sweep 추가 (스타크 워크샵 분위기)
+  const sweep = ctx.createOscillator();
+  sweep.type = 'sawtooth';
+  const sweepFilter = ctx.createBiquadFilter();
+  sweepFilter.type = 'lowpass';
+  sweepFilter.Q.value = 6;
+  const sweepGain = ctx.createGain();
+  sweep.connect(sweepFilter).connect(sweepGain).connect(masterGain);
+  sweep.frequency.setValueAtTime(80, t0);
+  sweep.frequency.exponentialRampToValueAtTime(800, t0 + 0.5);
+  sweepFilter.frequency.setValueAtTime(200, t0);
+  sweepFilter.frequency.exponentialRampToValueAtTime(2400, t0 + 0.5);
+  sweepGain.gain.setValueAtTime(0, t0);
+  sweepGain.gain.linearRampToValueAtTime(0.08, t0 + 0.2);
+  sweepGain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.55);
+  sweep.start(t0);
+  sweep.stop(t0 + 0.6);
+
+  // ━━ Phase 2 (0.4~0.8s): 데이터 스캔 비프 시퀀스 ━━
+  // 영화에서 자비스가 시스템 점검할 때 들리는 그 짧은 비프들
+  const beepFreqs = [1800, 2400, 3000, 2400, 2800, 3400];
+  beepFreqs.forEach((f, i) => {
+    const t = t0 + 0.45 + i * 0.05;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = f;
+    const g = ctx.createGain();
+    osc.connect(g).connect(masterGain);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.1, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+    osc.start(t);
+    osc.stop(t + 0.05);
+  });
+
+  // ━━ Phase 3 (0.85~1.1s): 메인 차임 (3음 화음, ALL ONLINE 신호) ━━
+  // 도-미-솔 화음으로 "시스템 준비 완료" 표현
+  const chord = [523.25, 659.25, 783.99]; // C5, E5, G5
+  chord.forEach(freq => {
+    const t = t0 + 0.85;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const g = ctx.createGain();
+    osc.connect(g).connect(masterGain);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.07, t + 0.05);
+    g.gain.linearRampToValueAtTime(0.05, t + 0.3);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+    osc.start(t);
+    osc.stop(t + 0.65);
+  });
+
+  // ━━ Phase 4 (1.0~1.4s): 고음 sustain (페이드 아웃) ━━
+  const sus = ctx.createOscillator();
+  sus.type = 'sine';
+  sus.frequency.value = 1568;
+  const susG = ctx.createGain();
+  sus.connect(susG).connect(masterGain);
+  susG.gain.setValueAtTime(0, t0 + 1.0);
+  susG.gain.linearRampToValueAtTime(0.04, t0 + 1.05);
+  susG.gain.exponentialRampToValueAtTime(0.001, t0 + 1.4);
+  sus.start(t0 + 1.0);
+  sus.stop(t0 + 1.45);
+}
+
+// ─── 처리 시작 사운드 (THINKING 진입) — 자비스 working 텍 사운드 ─
+function playProcess() {
+  if (!soundEnabled) return;
+  if (playJarvisSound('working', 0.6)) return;
+
+  // 폴백: 영화 자비스가 정보 처리할 때 들리는 텍-텍 사운드
+  // 4개 짧은 비프가 빠르게 (데이터 처리 중 신호)
+  const ctx = getSoundCtx();
+  const t0 = ctx.currentTime;
+  const beeps = [
+    { f: 2200, t: 0.00, dur: 0.04 },
+    { f: 2800, t: 0.06, dur: 0.04 },
+    { f: 2400, t: 0.12, dur: 0.04 },
+    { f: 3000, t: 0.18, dur: 0.06 },
+  ];
+  beeps.forEach(b => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = b.f;
+    const g = ctx.createGain();
+    osc.connect(g).connect(masterGain);
+    g.gain.setValueAtTime(0, t0 + b.t);
+    g.gain.linearRampToValueAtTime(0.08, t0 + b.t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + b.t + b.dur);
+    osc.start(t0 + b.t);
+    osc.stop(t0 + b.t + b.dur + 0.02);
+  });
+}
+
+// ─── listening 사운드 — 자비스가 듣기 시작할 때 ─────────
+function playListening() {
+  if (!soundEnabled) return;
+  if (playJarvisSound('listening', 0.6)) return;
+
+  // 폴백: 부드러운 상승 차임 (귀 기울이는 신호)
+  const ctx = getSoundCtx();
+  const t0 = ctx.currentTime;
+  [880, 1320].forEach((freq, i) => {
+    const t = t0 + i * 0.08;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, t);
+    osc.frequency.linearRampToValueAtTime(freq * 1.2, t + 0.15);
+    const g = ctx.createGain();
+    osc.connect(g).connect(masterGain);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.08, t + 0.03);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    osc.start(t);
+    osc.stop(t + 0.2);
+  });
+}
+
+// ─── end 사운드 — 종료 / 비활성화 ────────────────────────
+function playJarvisEnd() {
+  if (!soundEnabled) return;
+  if (playJarvisSound('end', 0.5)) return;
+
+  // 폴백: 하강 2음 (종료 신호)
+  const ctx = getSoundCtx();
+  const t0 = ctx.currentTime;
+  [1320, 880].forEach((freq, i) => {
+    const t = t0 + i * 0.1;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const g = ctx.createGain();
+    osc.connect(g).connect(masterGain);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(0.06, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    osc.start(t);
+    osc.stop(t + 0.22);
+  });
+}
+
+// ─── 응답 시작 사운드 (자비스가 말하기 직전) ───────
+function playRespond() {
+  if (!soundEnabled) return;
+  const ctx = getSoundCtx();
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  const g = ctx.createGain();
+  osc.connect(g).connect(masterGain);
+  const t = ctx.currentTime;
+  // 짧은 차임 (high → low)
+  osc.frequency.setValueAtTime(2400, t);
+  osc.frequency.exponentialRampToValueAtTime(1200, t + 0.15);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.1, t + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+  osc.start(t);
+  osc.stop(t + 0.2);
+}
+
+// ─── 에러 사운드 (자가복구 진입) ──────────────────
+function playError() {
+  if (!soundEnabled) return;
+  const ctx = getSoundCtx();
+  // 낮은 부저 (down sweep)
+  const osc = ctx.createOscillator();
+  osc.type = 'square';
+  const g = ctx.createGain();
+  osc.connect(g).connect(masterGain);
+  const t = ctx.currentTime;
+  osc.frequency.setValueAtTime(440, t);
+  osc.frequency.linearRampToValueAtTime(220, t + 0.3);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.18, t + 0.02);
+  g.gain.linearRampToValueAtTime(0.18, t + 0.25);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+  osc.start(t);
+  osc.stop(t + 0.4);
+}
+
+// ─── 성공 사운드 (자가복구 성공, 작업 완료) ────────
+function playSuccess() {
+  if (!soundEnabled) return;
+  // 상승 3음 차임 (도-미-솔)
+  [800, 1200, 1600].forEach((freq, i) => {
+    setTimeout(() => playBeep(freq, 0.12, 0.13), i * 70);
+  });
+}
+
+// ─── 박수 감지 사운드 (두 번째 박수 직후) ───────────
+function playClapAck() {
+  if (!soundEnabled) return;
+  const ctx = getSoundCtx();
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  const g = ctx.createGain();
+  osc.connect(g).connect(masterGain);
+  const t = ctx.currentTime;
+  osc.frequency.setValueAtTime(3000, t);
+  osc.frequency.exponentialRampToValueAtTime(1800, t + 0.2);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.18, t + 0.02);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  osc.start(t);
+  osc.stop(t + 0.3);
+}
+
+// ─── HUD 인터랙션 사운드 (모달 열림 등) ────────────
+function playHudOpen() {
+  if (!soundEnabled) return;
+  playBeep(1800, 0.05, 0.08);
+  setTimeout(() => playBeep(2400, 0.05, 0.06), 50);
+}
+
+function playHudClose() {
+  if (!soundEnabled) return;
+  playBeep(2400, 0.05, 0.06);
+  setTimeout(() => playBeep(1600, 0.05, 0.05), 50);
+}
+
+// ─── 자가복구 진행 텍 사운드 (LLM 호출 중 반복) ─────
+function playProcessTick() {
+  playBeep(3200, 0.04, 0.06);
+}
+
+$('#audio-banner').addEventListener('click', () => {
+  unlockAudio();
+  // 사운드 시스템도 같이 unlock + 앰비언트 시작
+  setTimeout(() => {
+    playActivate();
+    setTimeout(() => startAmbient(), 800);
+  }, 100);
+});
+
+// 사운드 토글 (앰비언트 + 효과음)
+$('#sound-fab').addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  const fab = $('#sound-fab');
+  fab.classList.toggle('muted', !soundEnabled);
+  fab.textContent = soundEnabled ? '🎵' : '🔇';
+  if (soundEnabled) {
+    startAmbient();
+    playActivate();
+    log('SOUND', '앰비언트 ON', 'success');
+  } else {
+    stopAmbient();
+    log('SOUND', '앰비언트 OFF');
+  }
+});
+
+function attachRecognitionHandlers() {
+  if (!recognition) return;
+
+  recognition.onresult = (ev) => {
+    let interim = '';
+    let final = '';
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const r = ev.results[i];
+      if (r.isFinal) final += r[0].transcript;
+      else interim += r[0].transcript;
+    }
+    if (interim) {
+      youLine.textContent = interim;
+      youLine.classList.add('interim');
+    }
+    if (final) {
+      const text = final.trim();
+      youLine.classList.remove('interim');
+      log('STT', `"${text}"`, 'success');
+      if (!isProcessing) handleVoiceCommand(text);
+    }
+  };
+
+  recognition.onerror = (ev) => {
+    log('STT', 'error: ' + ev.error, 'warn');
+    if (ev.error === 'not-allowed') {
+      speak('마이크 권한이 필요합니다, 보스.');
+      deactivateMic();
+    }
+  };
+
+  recognition.onend = () => {
+    // continuous라도 일부 브라우저는 60s마다 자동 종료 → 재시작
+    if (recognitionActive && micActive) {
+      try { recognition.start(); } catch (e) {}
+    }
+  };
+}
+
+// ════════════════════════════════════════════════════════════
+// 🎙 SENSOR: MIC (실시간 STT + 박수 감지 + 파형)
+// ════════════════════════════════════════════════════════════
+let micStream = null;
+let micAudioCtx = null;
+let micAnalyser = null;
+let micDataArray = null;
+let micActive = false;
+let micRafId = null;
+
+let recognition = null;
+let recognitionActive = false;
+
+// 박수 감지 상태
+let clapAboveSince = 0;
+let lastClapTime = 0;
+let clapCount = 0;
+const CLAP_THRESHOLD = 0.35;     // RMS 임계 (0~1 정규화)
+const CLAP_MAX_DURATION = 220;   // ms — 박수는 짧음
+const CLAP_DOUBLE_WINDOW = 1500; // ms — 2초 내 2회
+
+const micWaveBars = $$('#mic-wave .mic-wave-bar');
+const micWave = $('#mic-wave');
+
+async function activateMic() {
+  if (micActive) {
+    deactivateMic();
+    return;
+  }
+  unlockAudio(); // TTS도 같이 unlock
+
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      }
+    });
+  } catch (e) {
+    log('MIC', '권한 거부 또는 실패: ' + e.message, 'error');
+    speak('마이크 권한이 필요합니다, 보스.');
+    $('#sensor-mic').classList.add('error');
+    $('#sensor-mic-status').textContent = '권한 거부';
+    return;
+  }
+
+  // AudioContext 셋업 (파형 + 박수 감지)
+  try {
+    micAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (micAudioCtx.state === 'suspended') await micAudioCtx.resume();
+    const source = micAudioCtx.createMediaStreamSource(micStream);
+    micAnalyser = micAudioCtx.createAnalyser();
+    micAnalyser.fftSize = 1024;
+    micAnalyser.smoothingTimeConstant = 0.4;
+    source.connect(micAnalyser);
+    micDataArray = new Uint8Array(micAnalyser.fftSize);
+  } catch (e) {
+    log('MIC', 'AudioContext 실패: ' + e.message, 'error');
+  }
+
+  // SpeechRecognition 셋업
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (SR) {
+    recognition = new SR();
+    recognition.lang = 'ko-KR';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+    attachRecognitionHandlers();
+
+    try {
+      recognition.start();
+      recognitionActive = true;
+      log('STT', 'SpeechRecognition 시작 (ko-KR continuous)', 'success');
+    } catch (e) {
+      log('STT', 'start 실패: ' + e.message, 'warn');
+    }
+  } else {
+    log('STT', 'SpeechRecognition API 미지원 (Chrome/Edge 권장)', 'warn');
+  }
+
+  micActive = true;
+  $('#sensor-mic').classList.add('active', 'armed');
+  $('#sensor-mic-status').textContent = 'LISTENING';
+  $('#sensor-clap').classList.add('active', 'armed');
+  $('#sensor-clap-status').textContent = 'ARMED';
+  micWave.classList.add('show');
+
+  // 자비스 listening 사운드 (외부 또는 합성)
+  playListening();
+  speak('마이크 가동, 보스.');
+  log('SENSOR', '마이크 + 박수 감지 활성화', 'success');
+
+  // 분석 루프 시작
+  analyzeMicLoop();
+}
+
+function deactivateMic() {
+  micActive = false;
+  recognitionActive = false;
+
+  if (micRafId) cancelAnimationFrame(micRafId);
+  micRafId = null;
+
+  if (recognition) {
+    try { recognition.stop(); } catch (e) {}
+    recognition = null;
+  }
+
+  if (micStream) {
+    micStream.getTracks().forEach(t => t.stop());
+    micStream = null;
+  }
+
+  if (micAudioCtx) {
+    micAudioCtx.close().catch(() => {});
+    micAudioCtx = null;
+    micAnalyser = null;
+  }
+
+  $('#sensor-mic').classList.remove('active', 'armed', 'error');
+  $('#sensor-mic-status').textContent = 'OFFLINE';
+  $('#sensor-clap').classList.remove('active', 'armed');
+  $('#sensor-clap-status').textContent = 'OFFLINE';
+  micWave.classList.remove('show');
+
+  // 자비스 종료음
+  playJarvisEnd();
+  log('SENSOR', '마이크 비활성화');
+}
+
+// 마이크 분석 루프 — 파형 + 박수 감지
+function analyzeMicLoop() {
+  if (!micActive || !micAnalyser) return;
+
+  micAnalyser.getByteTimeDomainData(micDataArray);
+
+  // RMS 계산 (정규화 0~1)
+  let sumSq = 0;
+  let peak = 0;
+  for (let i = 0; i < micDataArray.length; i++) {
+    const v = (micDataArray[i] - 128) / 128; // -1 ~ 1
+    sumSq += v * v;
+    const abs = Math.abs(v);
+    if (abs > peak) peak = abs;
+  }
+  const rms = Math.sqrt(sumSq / micDataArray.length);
+
+  // 파형 시각화 (12개 바, 주파수 도메인 사용)
+  if (micWaveBars.length) {
+    const freqData = new Uint8Array(micAnalyser.frequencyBinCount);
+    micAnalyser.getByteFrequencyData(freqData);
+    const step = Math.floor(freqData.length / micWaveBars.length);
+    for (let i = 0; i < micWaveBars.length; i++) {
+      const v = freqData[i * step] / 255;
+      micWaveBars[i].style.height = (3 + v * 18) + 'px';
+    }
+  }
+
+  // 박수 감지 — 짧은 임펄스 + 2초 내 2회
+  const now = performance.now();
+
+  if (peak > CLAP_THRESHOLD) {
+    if (clapAboveSince === 0) clapAboveSince = now;
+  } else {
+    if (clapAboveSince > 0) {
+      const duration = now - clapAboveSince;
+      clapAboveSince = 0;
+      if (duration < CLAP_MAX_DURATION) {
+        // 짧은 임펄스 = 박수 후보
+        if (now - lastClapTime <= CLAP_DOUBLE_WINDOW) {
+          clapCount++;
+        } else {
+          clapCount = 1;
+        }
+        lastClapTime = now;
+        flashClap();
+        log('CLAP', `감지 (${clapCount}/2, ${duration|0}ms, peak ${peak.toFixed(2)})`, 'warn');
+
+        if (clapCount >= 2) {
+          clapCount = 0;
+          log('CLAP', '👏👏 더블 클랩 → 게임 모드', 'success');
+          playClapAck();
+          if (!isProcessing) {
+            speak('박수 감지, 게임 모드, 보스.');
+            setTimeout(() => dispatch('clap'), 800);
+          }
+        }
+      }
+    }
+  }
+
+  micRafId = requestAnimationFrame(analyzeMicLoop);
+}
+
+function flashClap() {
+  const f = $('#clap-flash');
+  f.classList.add('show');
+  setTimeout(() => f.classList.remove('show'), 200);
+}
+
+function handleVoiceCommand(text) {
+  setYou(text);
+  const intent = classifyIntent(text);
+  if (!intent) {
+    log('CLASSIFY', '의도 식별 실패: ' + text, 'warn');
+    speak('명령을 이해하지 못했습니다, 보스.');
+    return;
+  }
+  setState('listening', 'TRANSCRIBING');
+  setTimeout(async () => {
+    if (isProcessing) return;
+    isProcessing = true;
+    try {
+      log('INTENT', `${intent} (${intentLabel(intent)})`, 'success');
+      await runPipeline(intent, text);
+    } finally {
+      isProcessing = false;
+    }
+  }, 200);
+}
+
+$('#sensor-mic').addEventListener('click', activateMic);
+$('#sensor-clap').addEventListener('click', () => {
+  // clap 카드를 누르면 마이크가 같이 켜짐 (박수 감지는 마이크 의존)
+  if (!micActive) activateMic();
+});
+
+// ════════════════════════════════════════════════════════════
+// 📹 SENSOR: CAMERA (카메라 + 모션 감지)
+// ════════════════════════════════════════════════════════════
+let camStream = null;
+let camActive = false;
+let camRafId = null;
+let prevFrame = null;
+let camCanvas = null;
+let camCtx = null;
+
+async function activateCamera() {
+  if (camActive) {
+    deactivateCamera();
+    return;
+  }
+
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'user', width: 320, height: 240 }
+    });
+  } catch (e) {
+    log('CAM', '권한 거부: ' + e.message, 'error');
+    speak('카메라 권한이 필요합니다, 보스.');
+    $('#sensor-cam').classList.add('error');
+    $('#sensor-cam-status').textContent = '권한 거부';
+    return;
+  }
+
+  const video = $('#camera-video');
+  video.srcObject = camStream;
+  await video.play().catch(() => {});
+
+  $('#camera-pip').classList.add('show');
+  camActive = true;
+  $('#sensor-cam').classList.add('active', 'armed');
+  $('#sensor-cam-status').textContent = 'ONLINE';
+
+  // 모션 감지용 canvas
+  camCanvas = document.createElement('canvas');
+  camCanvas.width = 80; camCanvas.height = 60;
+  camCtx = camCanvas.getContext('2d', { willReadFrequently: true });
+
+  speak('카메라 가동, 보스.');
+  log('SENSOR', '카메라 활성화 — 모션 감지 시작', 'success');
+  motionLoop();
+}
+
+function deactivateCamera() {
+  camActive = false;
+  if (camRafId) cancelAnimationFrame(camRafId);
+  camRafId = null;
+
+  if (camStream) {
+    camStream.getTracks().forEach(t => t.stop());
+    camStream = null;
+  }
+
+  $('#camera-pip').classList.remove('show');
+  $('#sensor-cam').classList.remove('active', 'armed', 'error');
+  $('#sensor-cam-status').textContent = 'OFFLINE';
+  prevFrame = null;
+  log('SENSOR', '카메라 비활성화');
+}
+
+let lastMotionAlert = 0;
+function motionLoop() {
+  if (!camActive) return;
+  const video = $('#camera-video');
+  if (video.readyState >= 2 && camCanvas && camCtx) {
+    try {
+      camCtx.drawImage(video, 0, 0, 80, 60);
+      const cur = camCtx.getImageData(0, 0, 80, 60);
+      let diff = 0;
+      if (prevFrame) {
+        const a = cur.data;
+        const b = prevFrame.data;
+        for (let i = 0; i < a.length; i += 16) {
+          // RGBA 4byte씩 → 4픽셀 건너뛰며 샘플링
+          diff += Math.abs(a[i] - b[i]);
+        }
+        diff /= (a.length / 16);
+      }
+      prevFrame = cur;
+
+      // 모션 강도 시각화 (PIP 하단 바)
+      const motionBar = $('#camera-motion');
+      const intensity = Math.min(1, diff / 30);
+      motionBar.style.width = (intensity * 100) + '%';
+
+      if (intensity > 0.5) {
+        motionBar.classList.add('detected');
+        // 강한 모션 감지 시 로그 (스로틀)
+        const now = performance.now();
+        if (now - lastMotionAlert > 3000) {
+          lastMotionAlert = now;
+          log('CAM', `모션 감지 (강도 ${(intensity*100|0)}%)`, 'warn');
+        }
+      } else {
+        motionBar.classList.remove('detected');
+      }
+    } catch (e) {
+      // 첫 프레임은 SecurityError 가능 — 무시
+    }
+  }
+  camRafId = requestAnimationFrame(motionLoop);
+}
+
+$('#sensor-cam').addEventListener('click', activateCamera);
+$('#camera-close').addEventListener('click', deactivateCamera);
+
+// ════════════════════════════════════════════════════════════
+
+// ─── 부팅 시퀀스 ──────────────────────────────────
+async function bootSequence() {
+  // GitHub 자비스 사운드팩 백그라운드 로딩 (부팅과 병행)
+  // unlockAudio 후 실제 재생 가능
+  loadJarvisSounds().catch(() => {});
+
+  const bootLines = [
+    'INIT CORE...',
+    'LOAD SPEECH ENGINES (STT + TTS)...',
+    'INIT INTENT JUDGE — 13 DOMAINS...',
+    '  └ 일상 · 대화 · 지식 · 창작...',
+    '  └ IoT · 통신 · 보안 · 건강...',
+    '  └ 미디어 · 트레이딩 · 시스템...',
+    'CONNECT MCP / TOOL ROUTER...',
+    'TTS PIPELINE: BRITISH MALE ARMED...',
+    'LOAD MOVIE SOUNDPACK (KKshitiz)...',
+    'SENSOR ARRAY READY (MIC · CAM · CLAP)...',
+    'SELF-HEALING ARMED...',
+    'ALL SYSTEMS ONLINE',
+  ];
+  const bootEl = $('#boot-log');
+  for (let i = 0; i < bootLines.length; i++) {
+    await sleep(280 + Math.random() * 220);
+    const line = document.createElement('div');
+    if (i === bootLines.length - 1) {
+      line.innerHTML = `<span class="ok">[OK]</span> ${bootLines[i]}`;
+    } else {
+      line.textContent = `> ${bootLines[i]}`;
+    }
+    bootEl.appendChild(line);
+    bootEl.scrollTop = bootEl.scrollHeight;
+  }
+  await sleep(700);
+  $('#boot-screen').classList.add('fade');
+  await sleep(700);
+  $('#boot-screen').remove();
+  $('#app').classList.remove('hidden');
+
+  // 본격 부팅 후 환경 + voice 초기화
+  if ('speechSynthesis' in window) {
+    refreshVoices();
+    synth.addEventListener('voiceschanged', refreshVoices);
+    setTimeout(refreshVoices, 500);
+    setTimeout(refreshVoices, 1500);
+  }
+  renderEnvSummary();
+  log('BOOT', 'JARVIS Mk II 가동', 'success');
+  log('ENV', `${env.broker} / ${env.os} / ${env.strategy} / ${env.mode}`);
+  log('READY', '명령 대기 중...');
+}
+
+bootSequence();
+</script>
+
+</body>
+</html>
