@@ -2097,83 +2097,8 @@ function setYou(text) {
   youLine.textContent = text;
 }
 
-// 한국어 메시지 → 영어 발화용 매핑 (영화 자비스 톤)
-// 화면엔 한국어 그대로, 음성은 영국 남자 voice가 영어로 발화
-const SPEAK_EN = {
-  '환경 설정 완료, 보스.': 'Environment configured, sir.',
-  '마이크 가동, 보스.': 'Microphone online, sir.',
-  '카메라 가동, 보스.': 'Camera online, sir.',
-  '카메라 권한이 필요합니다, 보스.': 'Camera permission required, sir.',
-  '마이크 권한이 필요합니다, 보스.': 'Microphone permission required, sir.',
-  '명령을 이해하지 못했습니다, 보스.': "I didn't catch that, sir.",
-  '시세 조회 실패, 보스.': 'Market data unavailable, sir.',
-  '코드 생성 완료, 보스.': 'Code generated, sir.',
-  '디비 분석 완료, 보스.': 'Database analysis complete, sir.',
-  '저평가 후보 3종목, 보스.': 'Three undervalued candidates identified, sir.',
-  '아이디어 정리 완료, 보스.': 'Ideas organized, sir.',
-  '디버그 분석 완료, 보스.': 'Debug analysis complete, sir.',
-  '검색 완료, 보스.': 'Search complete, sir.',
-  '백테스트 실행, 보스.': 'Initiating backtest, sir.',
-  '라이브러리 누락, 분석 중, 보스.': 'Missing library detected. Analyzing, sir.',
-  '복구 시도 중, 보스. 일차.': 'Initiating recovery, sir. Attempt one.',
-  '수정안 적용, 재실행, 보스.': 'Patch applied. Restarting, sir.',
-  '일차 실패, 보스.': 'First attempt failed, sir.',
-  '복구 시도 중, 보스. 이차.': 'Initiating recovery, sir. Attempt two.',
-  '복구 완료, 보스. 이차에서 성공.': 'Recovery complete, sir. Successful on second attempt.',
-  '메모 저장했습니다, 보스.': 'Memo saved, sir.',
-  '알람 설정했습니다, 보스.': 'Alarm set, sir.',
-  '타이머 시작합니다, 보스.': 'Timer started, sir.',
-  '수식을 이해하지 못했습니다, 보스.': 'I cannot parse that expression, sir.',
-  '주요 뉴스 4건 확인했습니다, 보스.': 'Four headlines retrieved, sir.',
-  '초안 준비됐습니다, 보스.': 'Draft is ready, sir.',
-  '요약 완료, 보스.': 'Summary complete, sir.',
-  '음악 시작합니다, 보스. 집중하기 좋은 곡으로 골랐습니다.': 'Playing music, sir. I selected something to help you focus.',
-  '음악 멈췄습니다, 보스.': 'Music paused, sir.',
-  '보안 모드 활성화. 모든 출입구 잠금 확인했습니다, 보스.': 'Security mode active. All entry points secured, sir.',
-  '전화 연결합니다, 보스.': 'Placing the call, sir.',
-  '메시지 전송했습니다, 보스.': 'Message sent, sir.',
-  '건강 지표 모두 정상입니다, 보스. 다만 어제 수면이 다소 부족했습니다.': 'All vitals nominal, sir. Though your sleep was slightly insufficient last night.',
-  '모든 시스템 정상, 보스.': 'All systems nominal, sir.',
-  '박수 감지, 게임 모드, 보스.': 'Clap detected. Engaging game mode, sir.',
-  '오늘 일정은 세 건입니다, 보스. 14시 전략 리뷰부터 시작하시면 됩니다.': "You have three appointments today, sir. Starting with the strategy review at 14:00.",
-};
-
-// 한국어 패턴 → 영어 변환 (매핑에 없을 때)
-function jarvisifyForSpeech(text) {
-  // 정확히 매칭되면 영어 버전 반환
-  if (SPEAK_EN[text]) return SPEAK_EN[text];
-
-  // 부분 매칭 시도
-  // "오후 3시 47분입니다, 보스." 같은 동적 메시지
-  if (/오전 \d+시 \d+분/.test(text)) {
-    const m = text.match(/오전 (\d+)시 (\d+)분/);
-    return `It is ${m[1]}:${m[2].padStart(2,'0')} AM, sir.`;
-  }
-  if (/오후 \d+시 \d+분/.test(text)) {
-    const m = text.match(/오후 (\d+)시 (\d+)분/);
-    const h = parseInt(m[1]) === 12 ? 12 : parseInt(m[1]) + 12;
-    return `It is ${h}:${m[2].padStart(2,'0')}, sir.`;
-  }
-  if (/오늘은.*요일입니다/.test(text)) return 'Today is ' + text.replace('오늘은', '').replace('입니다, 보스.', '') + ', sir.';
-  if (/^\$/.test(text) || /\d+달러/.test(text)) {
-    return text.replace(/(\d+(?:\.\d+)?)달러/, '$1 dollars').replace(', 보스.', ', sir.');
-  }
-  if (/번역 결과:/.test(text)) {
-    const m = text.match(/번역 결과:\s*(.+),\s*보스\./);
-    return m ? `Translation: ${m[1]}, sir.` : text;
-  }
-  if (/결과는 (.+)입니다, 보스\./.test(text)) {
-    const m = text.match(/결과는 (.+)입니다, 보스\./);
-    return `The result is ${m[1]}, sir.`;
-  }
-
-  // 매핑 못 찾으면 — 영국 voice가 한국어 그대로 어설프게 읽음 (외국인 톤)
-  // 그래도 "보스" → "sir" 정도는 치환
-  return text.replace(/, 보스\./g, ', sir.').replace(/보스/g, 'sir');
-}
-
 function speak(text, opts={}) {
-  jarvisLine.textContent = text;  // 화면엔 한국어 그대로
+  jarvisLine.textContent = text;  // 화면에는 한국어 그대로
   log('SPEAK', text, 'speak');
 
   if (!ttsEnabled) return;
@@ -2183,7 +2108,7 @@ function speak(text, opts={}) {
     return;
   }
 
-  // 발화는 영어로 변환 (영국 남자 voice가 자연스럽게 발음)
+  // 핵심: 발화는 영어로 변환 (영국 남자 voice가 자연스럽게 발음)
   const speechText = opts.sayAs || jarvisifyForSpeech(text);
 
   synth.cancel();
@@ -2192,7 +2117,6 @@ function speak(text, opts={}) {
   if (opts.rate) u.rate = opts.rate;
   if (opts.pitch) u.pitch = opts.pitch;
 
-  // 자기 음성 무시 — TTS 재생 중엔 STT를 일시 정지
   const wasRecognizing = recognitionActive && recognition;
   if (wasRecognizing) {
     try { recognition.stop(); recognitionActive = false; } catch (e) {}
@@ -2268,32 +2192,40 @@ function refreshVoices() {
   if (!synth) return;
   const voices = synth.getVoices();
 
-  // 영화 자비스 = Paul Bettany 영국 남성 톤
-  // Android Chrome에서 가장 자비스 같은 voice 우선순위:
+  // 디버그: 사용 가능한 voice 목록 첫 회만 로그
+  if (!window._voicesLogged && voices.length > 0) {
+    window._voicesLogged = true;
+    log('TTS', `사용 가능 voice: ${voices.length}개`);
+    voices.slice(0, 8).forEach(v => {
+      log('TTS', `  · ${v.name} [${v.lang}]`);
+    });
+  }
+
+  // 영화 자비스 = Paul Bettany 영국 남성. 한국어 voice는 절대 사용 안 함.
   pickedVoice =
-    // 1. Google UK English Male (Android Chrome 기본 — 가장 자비스 같음!)
+    // 1. Google UK English Male (Android Chrome 기본 — 가장 자비스 같음)
     voices.find(v => /google.*uk.*english.*male/i.test(v.name)) ||
-    voices.find(v => /google.*english.*male/i.test(v.name) && /uk|gb/i.test(v.name)) ||
-    // 2. 영국 남성 명시적 이름들
+    voices.find(v => /google.*english.*\(uk\).*male/i.test(v.name)) ||
+    // 2. 영국 남성 명시
     voices.find(v => /^en[-_]GB/i.test(v.lang) && /(daniel|george|oliver|james|arthur|harry|ryan|male)/i.test(v.name)) ||
     // 3. Microsoft 영국 남성
     voices.find(v => /microsoft.*(george|ryan|james|oliver)/i.test(v.name)) ||
-    // 4. en-GB 중 여성 voice 제외한 것
+    // 4. en-GB 중 여성 제외
     voices.find(v => /^en[-_]GB/i.test(v.lang) && !/female|samantha|moira|kate|serena|fiona|tessa|karen|veena|hazel|susan/i.test(v.name)) ||
-    // 5. 호주 남성 (영국과 비슷한 영어)
-    voices.find(v => /^en[-_]AU/i.test(v.lang) && /male|lee|james|russell/i.test(v.name)) ||
+    // 5. 호주 남성
+    voices.find(v => /^en[-_]AU/i.test(v.lang) && /(male|lee|james|russell)/i.test(v.name)) ||
     // 6. 미국 남성
     voices.find(v => /^en[-_]US/i.test(v.lang) && /(alex|fred|mark|aaron|tom|david|reed|guy|bruce|male)/i.test(v.name)) ||
-    // 7. 어떤 영어 voice든 (여성 제외)
+    // 7. 어떤 영어 voice라도 (여성 제외)
     voices.find(v => /^en/i.test(v.lang) && !/female|samantha|kate|karen|susan/i.test(v.name)) ||
     voices[0];
 
-  // 한국어 voice는 보관만 (현재 사용 안 함 — 영국 voice가 한국어도 발음)
-  pickedKoreanVoice = voices.find(v => v.lang === 'ko-KR') || voices.find(v => v.lang.startsWith('ko')) || null;
+  pickedKoreanVoice = voices.find(v => v.lang === 'ko-KR') || null;
 
   if (pickedVoice) {
     const n = pickedVoice.name;
     voiceStatus.textContent = (n.length > 14 ? n.slice(0, 14) + '…' : n);
+    log('TTS', `자비스 voice 선택: ${pickedVoice.name} [${pickedVoice.lang}]`, 'success');
   } else if (voices.length === 0) {
     voiceStatus.textContent = 'voice 로딩';
   } else {
@@ -2303,23 +2235,99 @@ function refreshVoices() {
 
 let pickedKoreanVoice = null;
 
-// 자비스 스타일로 utterance 셋팅 (Paul Bettany 톤 흉내)
-// Paul Bettany 자비스 = 깊고 차분한 영국 신사, 약간의 위트
-function applyJarvisVoice(u) {
-  // 핵심 변경: 한국어든 영어든 무조건 영국 남성 voice 사용
-  // → 한국어 발음에 살짝 외국인 억양이 섞이지만, 그게 진짜 자비스 같음
-  // → 한국어 여성 voice보다 100배 더 영화 자비스에 가까움
+// 핵심: 한국어 메시지 → 영어 발화 매핑
+// 화면엔 한국어 그대로 보이고, 발화는 영국 남자 voice가 영어로
+const SPEAK_EN = {
+  '환경 설정 완료, 보스.': 'Environment configured, sir.',
+  '마이크 가동, 보스.': 'Microphone online, sir.',
+  '카메라 가동, 보스.': 'Camera online, sir.',
+  '카메라 권한이 필요합니다, 보스.': 'Camera permission required, sir.',
+  '마이크 권한이 필요합니다, 보스.': 'Microphone permission required, sir.',
+  '명령을 이해하지 못했습니다, 보스.': "I didn't catch that, sir.",
+  '시세 조회 실패, 보스.': 'Market data unavailable, sir.',
+  '코드 생성 완료, 보스.': 'Code generated, sir.',
+  '디비 분석 완료, 보스.': 'Database analysis complete, sir.',
+  '저평가 후보 3종목, 보스.': 'Three undervalued candidates identified, sir.',
+  '아이디어 정리 완료, 보스.': 'Ideas organized, sir.',
+  '디버그 분석 완료, 보스.': 'Debug analysis complete, sir.',
+  '검색 완료, 보스.': 'Search complete, sir.',
+  '백테스트 실행, 보스.': 'Initiating backtest, sir.',
+  '라이브러리 누락, 분석 중, 보스.': 'Missing library detected. Analyzing, sir.',
+  '복구 시도 중, 보스. 일차.': 'Initiating recovery, sir. Attempt one.',
+  '수정안 적용, 재실행, 보스.': 'Patch applied. Restarting, sir.',
+  '일차 실패, 보스.': 'First attempt failed, sir.',
+  '복구 시도 중, 보스. 이차.': 'Initiating recovery, sir. Attempt two.',
+  '복구 완료, 보스. 이차에서 성공.': 'Recovery complete, sir. Successful on second attempt.',
+  '메모 저장했습니다, 보스.': 'Memo saved, sir.',
+  '알람 설정했습니다, 보스.': 'Alarm set, sir.',
+  '타이머 시작합니다, 보스.': 'Timer started, sir.',
+  '수식을 이해하지 못했습니다, 보스.': 'I cannot parse that expression, sir.',
+  '주요 뉴스 4건 확인했습니다, 보스.': 'Four headlines retrieved, sir.',
+  '초안 준비됐습니다, 보스.': 'Draft is ready, sir.',
+  '요약 완료, 보스.': 'Summary complete, sir.',
+  '음악 시작합니다, 보스. 집중하기 좋은 곡으로 골랐습니다.': 'Playing music, sir. Selected to help you focus.',
+  '음악 멈췄습니다, 보스.': 'Music paused, sir.',
+  '보안 모드 활성화. 모든 출입구 잠금 확인했습니다, 보스.': 'Security mode active. All entry points secured, sir.',
+  '전화 연결합니다, 보스.': 'Placing the call, sir.',
+  '메시지 전송했습니다, 보스.': 'Message sent, sir.',
+  '건강 지표 모두 정상입니다, 보스. 다만 어제 수면이 다소 부족했습니다.': 'All vitals nominal, sir. Though your sleep was slightly insufficient.',
+  '모든 시스템 정상, 보스.': 'All systems nominal, sir.',
+  '박수 감지, 게임 모드, 보스.': 'Clap detected. Engaging game mode, sir.',
+  '오늘 일정은 세 건입니다, 보스. 14시 전략 리뷰부터 시작하시면 됩니다.': "You have three appointments today, sir.",
+  '네, 보스. 듣고 있습니다.': 'Yes, sir. I am listening.',
+  '천만에요, 보스. 그게 제 일입니다.': 'My pleasure, sir.',
+  '도움이 되어 다행입니다, 보스.': 'Glad to help, sir.',
+};
 
+function jarvisifyForSpeech(text) {
+  if (SPEAK_EN[text]) return SPEAK_EN[text];
+
+  // 동적 메시지
+  if (/오전 \d+시 \d+분/.test(text)) {
+    const m = text.match(/오전 (\d+)시 (\d+)분/);
+    return `It is ${m[1]}:${m[2].padStart(2,'0')} AM, sir.`;
+  }
+  if (/오후 \d+시 \d+분/.test(text)) {
+    const m = text.match(/오후 (\d+)시 (\d+)분/);
+    const h = parseInt(m[1]) === 12 ? 12 : parseInt(m[1]) + 12;
+    return `It is ${h}:${m[2].padStart(2,'0')}, sir.`;
+  }
+  if (/오늘은.*요일/.test(text)) {
+    return 'I will check the date for you, sir.';
+  }
+  if (/현재 .*도, .*입니다/.test(text)) {
+    return 'Current weather report ready, sir.';
+  }
+  if (/번역 결과:/.test(text)) {
+    const m = text.match(/번역 결과:\s*(.+),\s*보스\./);
+    return m ? `Translation: ${m[1]}, sir.` : 'Translation ready, sir.';
+  }
+  if (/결과는 (.+)입니다, 보스\./.test(text)) {
+    const m = text.match(/결과는 (.+)입니다, 보스\./);
+    return `The result is ${m[1]}, sir.`;
+  }
+  if (/달러/.test(text)) {
+    return text.replace(/(\d+)달러/, '$1 dollars').replace(', 보스.', ', sir.');
+  }
+
+  // 매핑 못 찾음 → 안전한 기본 응답 (영국 voice가 깔끔하게 발음)
+  if (/, 보스\./.test(text)) {
+    return text.replace(/, 보스\./g, ', sir.').replace(/보스/g, 'sir');
+  }
+  return text + ' Sir.';
+}
+
+// 영국 남자 voice 강제 — 한국어 voice 절대 사용 안 함
+function applyJarvisVoice(u) {
   if (pickedVoice) {
     u.voice = pickedVoice;
     u.lang = pickedVoice.lang || 'en-GB';
   } else {
     u.lang = 'en-GB';
   }
-
   // Paul Bettany 톤 — 깊고 차분한 영국 신사
-  u.pitch = 0.75;   // 낮은 남성 음역대
-  u.rate = 0.88;    // 천천히, 또박또박
+  u.pitch = 0.78;
+  u.rate = 0.90;
   u.volume = 1.0;
 }
 
@@ -2718,10 +2726,21 @@ async function dispatch(cmd, freeText=null) {
   }
 
   if (isProcessing) {
-    log('SYS', '명령 처리 중 — 무시됨', 'warn');
-    return;
+    log('SYS', '이전 명령 처리 중 — 강제 해제 후 재실행', 'warn');
+    // 30초 이상 처리 중이면 분명히 락업. 강제 해제.
+    isProcessing = false;
+    setState('idle');
   }
   isProcessing = true;
+
+  // 안전장치: 30초 후 자동 해제 (어떤 경우에도 락업 안 되게)
+  const lockTimer = setTimeout(() => {
+    if (isProcessing) {
+      log('SYS', '30초 타임아웃 — 락업 자동 해제', 'warn');
+      isProcessing = false;
+      setState('idle');
+    }
+  }, 30000);
 
   try {
     const text = freeText || cmdToText(cmd);
@@ -2740,8 +2759,12 @@ async function dispatch(cmd, freeText=null) {
     log('INTENT', `${intent} (${intentLabel(intent)})`, 'success');
 
     await runPipeline(intent, text);
+  } catch (e) {
+    log('SYS', '실행 오류: ' + e.message, 'error');
   } finally {
+    clearTimeout(lockTimer);
     isProcessing = false;
+    setState('idle');
   }
 }
 
@@ -3843,7 +3866,7 @@ function getSoundCtx() {
   if (!soundCtx) {
     soundCtx = new (window.AudioContext || window.webkitAudioContext)();
     masterGain = soundCtx.createGain();
-    masterGain.gain.value = 0.8;
+    masterGain.gain.value = 0.85;
     masterGain.connect(soundCtx.destination);
   }
   if (soundCtx.state === 'suspended') {
@@ -3968,90 +3991,92 @@ function playBeep(freq=2400, duration=0.06, volume=0.12) {
 // 영상 zZ0tYNEv0cQ의 패턴: 낮은 험 → 데이터 스캔 → 메인 차임 → sustain
 function playActivate() {
   if (!soundEnabled) return;
+  // 외부 사운드 시도 (성공하면 그것 사용)
+  if (playJarvisSound('start', 0.8)) return;
 
-  // 영화 자비스 부팅음을 Web Audio로 정밀 재현 (외부 의존성 없음)
+  // 폴백: 영화 자비스 부팅음을 Web Audio로 정밀 재현
   const ctx = getSoundCtx();
   const t0 = ctx.currentTime;
 
-  // ━━ Phase 1 (0.0~0.6s): 깊은 부팅 험 (영화의 그 묵직한 시작) ━━
-  // 60Hz + 90Hz + 120Hz 사인파 합 (강화된 음량)
-  [60, 90, 120, 150].forEach((freq, i) => {
+  // ━━ Phase 1 (0.0~0.5s): 낮은 부팅 험 (영화의 그 묵직한 시작) ━━
+  // 60Hz + 90Hz 두 사인파 + 약간의 노이즈
+  [60, 90, 120].forEach((freq, i) => {
     const osc = ctx.createOscillator();
     osc.type = 'sine';
     osc.frequency.value = freq;
     const g = ctx.createGain();
     osc.connect(g).connect(masterGain);
     g.gain.setValueAtTime(0, t0);
-    g.gain.linearRampToValueAtTime(0.32 / (i + 1), t0 + 0.5);
-    g.gain.exponentialRampToValueAtTime(0.001, t0 + 1.8);
+    g.gain.linearRampToValueAtTime(0.18 / (i + 1), t0 + 0.4);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + 1.4);
     osc.start(t0);
-    osc.stop(t0 + 1.9);
+    osc.stop(t0 + 1.5);
   });
 
-  // 부팅 험에 sweep 추가 (스타크 워크샵 파워 업 분위기)
+  // 부팅 험에 살짝 sweep 추가 (스타크 워크샵 분위기)
   const sweep = ctx.createOscillator();
   sweep.type = 'sawtooth';
   const sweepFilter = ctx.createBiquadFilter();
   sweepFilter.type = 'lowpass';
-  sweepFilter.Q.value = 8;
+  sweepFilter.Q.value = 6;
   const sweepGain = ctx.createGain();
   sweep.connect(sweepFilter).connect(sweepGain).connect(masterGain);
   sweep.frequency.setValueAtTime(80, t0);
-  sweep.frequency.exponentialRampToValueAtTime(1200, t0 + 0.7);
+  sweep.frequency.exponentialRampToValueAtTime(800, t0 + 0.5);
   sweepFilter.frequency.setValueAtTime(200, t0);
-  sweepFilter.frequency.exponentialRampToValueAtTime(3000, t0 + 0.7);
+  sweepFilter.frequency.exponentialRampToValueAtTime(2400, t0 + 0.5);
   sweepGain.gain.setValueAtTime(0, t0);
-  sweepGain.gain.linearRampToValueAtTime(0.18, t0 + 0.3);
-  sweepGain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.75);
+  sweepGain.gain.linearRampToValueAtTime(0.08, t0 + 0.2);
+  sweepGain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.55);
   sweep.start(t0);
-  sweep.stop(t0 + 0.8);
+  sweep.stop(t0 + 0.6);
 
-  // ━━ Phase 2 (0.55~1.0s): 데이터 스캔 비프 시퀀스 (8개로 강화) ━━
+  // ━━ Phase 2 (0.4~0.8s): 데이터 스캔 비프 시퀀스 ━━
   // 영화에서 자비스가 시스템 점검할 때 들리는 그 짧은 비프들
-  const beepFreqs = [1800, 2400, 3000, 2400, 2800, 3400, 2600, 3200];
+  const beepFreqs = [1800, 2400, 3000, 2400, 2800, 3400];
   beepFreqs.forEach((f, i) => {
-    const t = t0 + 0.55 + i * 0.055;
+    const t = t0 + 0.45 + i * 0.05;
     const osc = ctx.createOscillator();
     osc.type = 'sine';
     osc.frequency.value = f;
     const g = ctx.createGain();
     osc.connect(g).connect(masterGain);
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.22, t + 0.005);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+    g.gain.linearRampToValueAtTime(0.1, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
     osc.start(t);
-    osc.stop(t + 0.06);
+    osc.stop(t + 0.05);
   });
 
-  // ━━ Phase 3 (1.05~1.7s): 메인 차임 (3음 화음, ALL ONLINE 신호) ━━
-  // 도-미-솔 화음 + 옥타브로 풍성하게
-  const chord = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+  // ━━ Phase 3 (0.85~1.1s): 메인 차임 (3음 화음, ALL ONLINE 신호) ━━
+  // 도-미-솔 화음으로 "시스템 준비 완료" 표현
+  const chord = [523.25, 659.25, 783.99]; // C5, E5, G5
   chord.forEach(freq => {
-    const t = t0 + 1.05;
+    const t = t0 + 0.85;
     const osc = ctx.createOscillator();
     osc.type = 'sine';
     osc.frequency.value = freq;
     const g = ctx.createGain();
     osc.connect(g).connect(masterGain);
     g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(0.14, t + 0.06);
-    g.gain.linearRampToValueAtTime(0.10, t + 0.4);
-    g.gain.exponentialRampToValueAtTime(0.001, t + 0.7);
+    g.gain.linearRampToValueAtTime(0.07, t + 0.05);
+    g.gain.linearRampToValueAtTime(0.05, t + 0.3);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
     osc.start(t);
-    osc.stop(t + 0.75);
+    osc.stop(t + 0.65);
   });
 
-  // ━━ Phase 4 (1.2~1.8s): 고음 sustain (페이드 아웃) ━━
+  // ━━ Phase 4 (1.0~1.4s): 고음 sustain (페이드 아웃) ━━
   const sus = ctx.createOscillator();
   sus.type = 'sine';
   sus.frequency.value = 1568;
   const susG = ctx.createGain();
   sus.connect(susG).connect(masterGain);
-  susG.gain.setValueAtTime(0, t0 + 1.2);
-  susG.gain.linearRampToValueAtTime(0.08, t0 + 1.25);
-  susG.gain.exponentialRampToValueAtTime(0.001, t0 + 1.8);
-  sus.start(t0 + 1.2);
-  sus.stop(t0 + 1.85);
+  susG.gain.setValueAtTime(0, t0 + 1.0);
+  susG.gain.linearRampToValueAtTime(0.04, t0 + 1.05);
+  susG.gain.exponentialRampToValueAtTime(0.001, t0 + 1.4);
+  sus.start(t0 + 1.0);
+  sus.stop(t0 + 1.45);
 }
 
 // ─── 처리 시작 사운드 (THINKING 진입) — 자비스 working 텍 사운드 ─
@@ -4295,22 +4320,18 @@ let recognitionActive = false;
 let clapAboveSince = 0;
 let lastClapTime = 0;
 let clapCount = 0;
-// 박수 감지 파라미터 (말소리/배경음과 구분)
-// 첫 5초간 환경 소음 측정 → 동적 임계 조정
-let CLAP_PEAK_THRESHOLD = 0.55;     // 동적 조정됨
+let CLAP_PEAK_THRESHOLD = 0.55;       // 환경에 따라 자동 조정
 const CLAP_RMS_THRESHOLD = 0.18;
-const CLAP_HF_RATIO_MIN = 0.32;     // 박수의 광대역 특성
-const CLAP_MAX_DURATION = 120;
-const CLAP_MIN_QUIET_BEFORE = 80;
+const CLAP_HF_RATIO_MIN = 0.30;       // 박수의 광대역 특성 (말소리는 협대역)
+const CLAP_MAX_DURATION = 130;        // 박수는 짧음 (이전 220 → 130)
 const CLAP_DOUBLE_WINDOW = 1500;
 const CLAP_COOLDOWN = 250;
 let lastSoundTime = 0;
-let inSpeechMode = false;
-
-// 환경 노이즈 캘리브레이션
+// 환경 노이즈 자동 캘리브레이션
 let calibrationSamples = [];
 let calibrationStart = 0;
 let calibrated = false;
+let clapDetectionEnabled = true;
 
 const micWaveBars = $$('#mic-wave .mic-wave-bar');
 const micWave = $('#mic-wave');
@@ -4438,18 +4459,18 @@ function analyzeMicLoop() {
   let sumSq = 0;
   let peak = 0;
   for (let i = 0; i < micDataArray.length; i++) {
-    const v = (micDataArray[i] - 128) / 128; // -1 ~ 1
+    const v = (micDataArray[i] - 128) / 128;
     sumSq += v * v;
     const abs = Math.abs(v);
     if (abs > peak) peak = abs;
   }
   const rms = Math.sqrt(sumSq / micDataArray.length);
 
-  // 주파수 분석 — 박수는 광대역, 말소리는 협대역
+  // 주파수 분석 (박수 = 광대역, 말소리 = 협대역)
   const freqData = new Uint8Array(micAnalyser.frequencyBinCount);
   micAnalyser.getByteFrequencyData(freqData);
 
-  // 파형 시각화 (12개 바)
+  // 파형 시각화
   if (micWaveBars.length) {
     const step = Math.floor(freqData.length / micWaveBars.length);
     for (let i = 0; i < micWaveBars.length; i++) {
@@ -4458,67 +4479,50 @@ function analyzeMicLoop() {
     }
   }
 
-  // 박수 특성 분석:
-  // - 저주파 (0~1kHz): 말소리, 배경음 주로 분포
-  // - 중주파 (1~3kHz): 모음, 일반 소리
-  // - 고주파 (3~8kHz): 박수의 시그니처 — 짧은 임펄스의 광대역 폭발
-  // 샘플레이트 44.1kHz / fftSize 1024 → 각 bin = 22050/512 ≈ 43Hz
-  // 0~1kHz: bin 0~23, 1~3kHz: bin 23~70, 3~8kHz: bin 70~186
+  // 저/중/고 주파수 비율 계산
   const lowSum = freqData.slice(0, 23).reduce((a, b) => a + b, 0);
   const midSum = freqData.slice(23, 70).reduce((a, b) => a + b, 0);
   const highSum = freqData.slice(70, 186).reduce((a, b) => a + b, 0);
   const totalSum = lowSum + midSum + highSum;
   const hfRatio = totalSum > 0 ? highSum / totalSum : 0;
 
-  // 박수 감지 — 짧은 임펄스 + 광대역 + 2초 내 2회
   const now = performance.now();
 
-  // ━━ 환경 노이즈 자동 캘리브레이션 (마이크 켠 후 첫 3초) ━━
+  // 환경 노이즈 자동 캘리브레이션 (첫 3초)
   if (!calibrated) {
     if (calibrationStart === 0) {
       calibrationStart = now;
-      log('CLAP', '환경 노이즈 측정 중... (3초)', 'warn');
+      log('CLAP', '환경 노이즈 측정 중... (3초 조용히)', 'warn');
     }
     calibrationSamples.push(peak);
     if (now - calibrationStart > 3000) {
-      // 3초간 측정한 peak의 95 퍼센타일 + 0.25 마진 = 박수 임계
       calibrationSamples.sort((a, b) => a - b);
       const p95 = calibrationSamples[Math.floor(calibrationSamples.length * 0.95)] || 0.3;
-      CLAP_PEAK_THRESHOLD = Math.max(0.45, Math.min(0.75, p95 + 0.25));
+      CLAP_PEAK_THRESHOLD = Math.max(0.40, Math.min(0.70, p95 + 0.25));
       calibrated = true;
-      log('CLAP', `캘리브레이션 완료: 임계=${CLAP_PEAK_THRESHOLD.toFixed(2)} (환경 p95=${p95.toFixed(2)})`, 'success');
+      log('CLAP', `캘리브레이션 완료: 임계=${CLAP_PEAK_THRESHOLD.toFixed(2)} (환경=${p95.toFixed(2)})`, 'success');
     }
-    // 캘리브레이션 중엔 박수 감지 안 함
     micRafId = requestAnimationFrame(analyzeMicLoop);
     return;
   }
 
-  // STT가 사용자 발화 듣고 있는 중이면 박수 감지 일시 정지
-  // (말하는 중에 박수 잘못 인식하지 않게)
-  if (recognitionActive && peak > 0.1) {
-    lastSoundTime = now;
-  }
-
-  // 마지막 큰 소리 후 정적 시간 (말소리 끝났는지 판단)
+  // STT 활성 + 큰 소리 = 사용자 발화 (박수 차단)
+  if (recognitionActive && peak > 0.1) lastSoundTime = now;
   const quietSince = now - lastSoundTime;
 
-  // 임계 + 짧은 임펄스 + 고주파 비율 + 정적 후 발생
+  // 박수 감지
   if (peak > CLAP_PEAK_THRESHOLD && rms > CLAP_RMS_THRESHOLD) {
-    if (clapAboveSince === 0) {
-      clapAboveSince = now;
-    }
+    if (clapAboveSince === 0) clapAboveSince = now;
     lastSoundTime = now;
   } else {
     if (clapAboveSince > 0) {
       const duration = now - clapAboveSince;
       clapAboveSince = 0;
 
-      // 박수 조건 모두 충족 시
       const isShortImpulse = duration < CLAP_MAX_DURATION;
       const isWideband = hfRatio >= CLAP_HF_RATIO_MIN;
       const cooledDown = (now - lastClapTime) > CLAP_COOLDOWN;
-      // 말소리 도중엔 박수 무시 (자비스가 듣는 동안엔 박수 OFF)
-      const notInSpeech = !recognitionActive || quietSince > CLAP_MIN_QUIET_BEFORE;
+      const notInSpeech = !recognitionActive || quietSince > 80;
 
       if (isShortImpulse && isWideband && cooledDown && notInSpeech && clapDetectionEnabled) {
         if (now - lastClapTime <= CLAP_DOUBLE_WINDOW) {
@@ -4528,22 +4532,16 @@ function analyzeMicLoop() {
         }
         lastClapTime = now;
         flashClap();
-        log('CLAP', `감지 (${clapCount}/2, ${duration|0}ms, peak ${peak.toFixed(2)}, HF ${(hfRatio*100|0)}%)`, 'warn');
+        log('CLAP', `감지 (${clapCount}/2, ${duration|0}ms, HF=${(hfRatio*100|0)}%)`, 'warn');
 
         if (clapCount >= 2) {
           clapCount = 0;
-          log('CLAP', '👏👏 더블 클랩 → 게임 모드', 'success');
+          log('CLAP', '👏👏 더블 클랩!', 'success');
           playClapAck();
           if (!isProcessing) {
             speak('박수 감지, 게임 모드, 보스.');
             setTimeout(() => dispatch('clap'), 800);
           }
-        }
-      } else if (isShortImpulse && peak > 0.5) {
-        // 디버그: 박수 후보였지만 통과 못 한 것 (조건 어긋남)
-        // 너무 자주 로깅하지 않도록 가끔만
-        if (Math.random() < 0.1) {
-          // log('CLAP', `필터됨 (peak ${peak.toFixed(2)}, HF ${(hfRatio*100|0)}%, dur ${duration|0}ms)`, '');
         }
       }
     }
@@ -4560,6 +4558,8 @@ function flashClap() {
 
 function handleVoiceCommand(text) {
   setYou(text);
+  log('STT', `"${text}"`, 'success');
+
   const intent = classifyIntent(text);
   if (!intent) {
     log('CLASSIFY', '의도 식별 실패: ' + text, 'warn');
@@ -4568,39 +4568,36 @@ function handleVoiceCommand(text) {
   }
   setState('listening', 'TRANSCRIBING');
   setTimeout(async () => {
-    if (isProcessing) return;
+    // 락업 자동 해제 (30초 이상이면 강제로 풀고 새 명령 처리)
+    if (isProcessing) {
+      log('SYS', '이전 처리 강제 해제, 새 명령 우선', 'warn');
+      isProcessing = false;
+    }
     isProcessing = true;
+    const lockTimer = setTimeout(() => {
+      if (isProcessing) {
+        log('SYS', '30초 타임아웃 — 락업 해제', 'warn');
+        isProcessing = false;
+        setState('idle');
+      }
+    }, 30000);
     try {
       log('INTENT', `${intent} (${intentLabel(intent)})`, 'success');
       await runPipeline(intent, text);
+    } catch (e) {
+      log('SYS', '실행 오류: ' + e.message, 'error');
     } finally {
+      clearTimeout(lockTimer);
       isProcessing = false;
+      setState('idle');
     }
   }, 200);
 }
 
 $('#sensor-mic').addEventListener('click', activateMic);
-
-// 박수 감지는 마이크와 독립적으로 토글 가능
-let clapDetectionEnabled = true;
 $('#sensor-clap').addEventListener('click', () => {
-  if (!micActive) {
-    // 마이크가 꺼져 있으면 마이크 먼저 켜고 박수도 ON
-    clapDetectionEnabled = true;
-    activateMic();
-    return;
-  }
-  // 마이크 켜진 상태면 박수 감지만 토글
-  clapDetectionEnabled = !clapDetectionEnabled;
-  if (clapDetectionEnabled) {
-    $('#sensor-clap').classList.add('active', 'armed');
-    $('#sensor-clap-status').textContent = 'ARMED';
-    log('CLAP', '박수 감지 ON', 'success');
-  } else {
-    $('#sensor-clap').classList.remove('active', 'armed');
-    $('#sensor-clap-status').textContent = 'PAUSED';
-    log('CLAP', '박수 감지 OFF (오인식 방지)', 'warn');
-  }
+  // clap 카드를 누르면 마이크가 같이 켜짐 (박수 감지는 마이크 의존)
+  if (!micActive) activateMic();
 });
 
 // ════════════════════════════════════════════════════════════
@@ -4717,8 +4714,9 @@ $('#camera-close').addEventListener('click', deactivateCamera);
 
 // ─── 부팅 시퀀스 ──────────────────────────────────
 async function bootSequence() {
-  // 합성 사운드만 사용 (외부 의존성 0, 항상 안정 작동)
-  // GitHub 사운드는 환경에 따라 차단되므로 비활성화
+  // GitHub 자비스 사운드팩 백그라운드 로딩 (부팅과 병행)
+  // unlockAudio 후 실제 재생 가능
+  loadJarvisSounds().catch(() => {});
 
   const bootLines = [
     'INIT CORE...',
@@ -4756,8 +4754,10 @@ async function bootSequence() {
   if ('speechSynthesis' in window) {
     refreshVoices();
     synth.addEventListener('voiceschanged', refreshVoices);
-    setTimeout(refreshVoices, 500);
-    setTimeout(refreshVoices, 1500);
+    setTimeout(refreshVoices, 300);
+    setTimeout(refreshVoices, 800);
+    setTimeout(refreshVoices, 2000);
+    setTimeout(refreshVoices, 4000);
   }
   renderEnvSummary();
   log('BOOT', 'JARVIS Mk II 가동', 'success');
