@@ -1502,7 +1502,7 @@ header::before {
   <header>
     <div class="logo">
       <div class="logo-mark">J.A.R.V.I.S</div>
-      <div class="logo-tag">MK III · v7.0 마이크충돌해결</div>
+      <div class="logo-tag">MK III · v8.0 PTT방식</div>
     </div>
     <div class="hud-status">
       <div class="status-line">
@@ -4400,49 +4400,41 @@ function attachRecognitionHandlers() {
 
   recognition.onerror = (ev) => {
     log('STT', 'error: ' + ev.error, 'warn');
+    recognitionActive = false;
+
     if (ev.error === 'not-allowed') {
-      speak('마이크 권한이 필요합니다, 보스.');
-      deactivateMic();
+      // Android Chrome: 자동 재시작 시 가짜 권한 거부 발생 가능
+      // deactivateMic 호출하지 않음 (무한 루프 방지)
+      // 사용자가 마이크 카드 다시 탭하면 정상 재시작
+      log('HINT', '마이크 카드를 다시 탭하면 재시작됩니다', 'warn');
+      $('#sensor-mic-status').textContent = 'TAP TO RETRY';
+      $('#sensor-mic').classList.remove('armed');
+      // speak 호출 제거 (TTS 무한 루프 끊기)
     } else if (ev.error === 'network') {
-      // 패치 STT-3: network 에러는 인터넷 끊김 → 재시작 시도
-      log('STT', '네트워크 에러 — 3초 후 재시도', 'warn');
-      setTimeout(() => {
-        if (micActive && !recognitionActive && recognition) {
-          try { recognition.start(); recognitionActive = true; } catch (e) {}
-        }
-      }, 3000);
-    } else if (ev.error === 'no-speech' || ev.error === 'aborted') {
-      // 정상적으로 자동 재시작됨 (onend에서)
+      log('STT', '네트워크 에러 — 마이크 카드 다시 탭하세요', 'warn');
+      $('#sensor-mic-status').textContent = 'NETWORK ERR';
+    } else if (ev.error === 'no-speech') {
+      log('STT', '침묵 감지 — 다시 말하려면 마이크 카드 탭', '');
+      $('#sensor-mic-status').textContent = 'TAP TO LISTEN';
+      $('#sensor-mic').classList.remove('armed');
+    } else if (ev.error === 'aborted') {
+      // 정상 종료
     } else if (ev.error === 'audio-capture') {
       log('STT', '마이크 사용 불가 — 다른 앱이 점유 중', 'error');
-      speak('마이크 사용 불가, 보스.');
+      $('#sensor-mic-status').textContent = 'MIC BUSY';
     }
   };
 
   recognition.onend = () => {
-    log('STT', 'recognition 종료됨, 재시작 시도', 'warn');
-    // micActive면 무조건 재시작 (continuous 무한 유지)
+    // Android Chrome 정책: 자동 재시작은 권한 거부됨
+    // → 사용자가 다시 마이크 카드 탭하면 재시작
+    log('STT', 'recognition 종료 — 다시 들으려면 마이크 카드 탭', 'warn');
+    recognitionActive = false;
+
+    // UI 표시: 듣기 종료 → 다시 탭하라고 알림
     if (micActive) {
-      setTimeout(() => {
-        if (micActive && recognition) {
-          try {
-            recognition.start();
-            recognitionActive = true;
-            log('STT', '✓ 재시작 성공', 'success');
-          } catch (e) {
-            // 이미 시작 상태면 OK
-            if (e.name === 'InvalidStateError') {
-              recognitionActive = true;
-              log('STT', '이미 활성 상태', 'success');
-            } else {
-              log('STT', '재시작 실패: ' + e.message, 'error');
-              recognitionActive = false;
-            }
-          }
-        }
-      }, 300);
-    } else {
-      recognitionActive = false;
+      $('#sensor-mic-status').textContent = 'TAP TO LISTEN';
+      $('#sensor-mic').classList.remove('armed');
     }
   };
 }
@@ -4760,7 +4752,31 @@ function handleVoiceCommand(text) {
   })();
 }
 
-$('#sensor-mic').addEventListener('click', activateMic);
+$('#sensor-mic').addEventListener('click', () => {
+  // Push-to-Talk 방식: 매번 탭마다 STT 새로 시작
+  if (!micActive) {
+    // 처음 시작
+    activateMic();
+  } else if (!recognitionActive && recognition) {
+    // 이미 활성화됐는데 STT만 죽은 경우 → 재시작 (사용자 제스처)
+    try {
+      recognition.start();
+      recognitionActive = true;
+      $('#sensor-mic-status').textContent = 'LISTENING';
+      $('#sensor-mic').classList.add('armed');
+      log('STT', '✓ 재시작됨 (보스 탭)', 'success');
+      playListening();
+    } catch (e) {
+      log('STT', '재시작 실패: ' + e.message, 'error');
+      // 완전히 죽었으면 마이크 다시 활성화
+      deactivateMic();
+      setTimeout(() => activateMic(), 500);
+    }
+  } else {
+    // STT 활성 중인데 탭 → 비활성화
+    deactivateMic();
+  }
+});
 $('#sensor-clap').addEventListener('click', () => {
   // clap 카드를 누르면 마이크가 같이 켜짐 (박수 감지는 마이크 의존)
   if (!micActive) activateMic();
@@ -4945,6 +4961,8 @@ async function bootSequence() {
 
   log('ENV', `${env.broker} / ${env.os} / ${env.strategy} / ${env.mode}`);
   log('READY', '명령 대기 중. 마이크 카드 탭하세요, 보스.');
+  log('TIP', '음성 인식은 한 번에 한 마디. 발화 후 다시 탭하면 새로 들음', 'warn');
+  log('TIP', '예: 탭 → "안녕" → 자비스 응답 → 탭 → "시스템 상태"', 'warn');
 }
 
 bootSequence();
