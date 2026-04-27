@@ -2,6 +2,10 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8" />
+<!-- 캐시 차단: 항상 최신 버전 로드 -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 <meta name="theme-color" content="#000510" />
 <title>J.A.R.V.I.S Mk III — Universal AI Assistant</title>
@@ -1498,7 +1502,7 @@ header::before {
   <header>
     <div class="logo">
       <div class="logo-mark">J.A.R.V.I.S</div>
-      <div class="logo-tag">MK III · Universal AI</div>
+      <div class="logo-tag">MK III · v5.0 한국어모드</div>
     </div>
     <div class="hud-status">
       <div class="status-line">
@@ -1736,10 +1740,10 @@ header::before {
         <div class="cmd-desc">8단계 거래 분석</div>
       </button>
       <button class="cmd" data-color="success" data-cmd="csv">
-        <span class="cmd-icon">▦</span>
-        <div class="cmd-label">SCRN</div>
-        <div class="cmd-name">"저평가 종목"</div>
-        <div class="cmd-desc">CSV 스크리닝</div>
+        <span class="cmd-icon">🔎</span>
+        <div class="cmd-label">SCAN</div>
+        <div class="cmd-name">"매집백 스캐너"</div>
+        <div class="cmd-desc">5시그널 전종목</div>
       </button>
       <button class="cmd wide" data-color="gold" data-cmd="self-heal">
         <span class="cmd-icon">🛡</span>
@@ -2098,7 +2102,7 @@ function setYou(text) {
 }
 
 function speak(text, opts={}) {
-  jarvisLine.textContent = text;  // 화면에는 한국어 그대로
+  jarvisLine.textContent = text;  // 화면 자막은 한국어 그대로
   log('SPEAK', text, 'speak');
 
   if (!ttsEnabled) return;
@@ -2108,8 +2112,17 @@ function speak(text, opts={}) {
     return;
   }
 
-  // 핵심: 발화는 영어로 변환 (영국 남자 voice가 자연스럽게 발음)
-  const speechText = opts.sayAs || jarvisifyForSpeech(text);
+  // 발화 텍스트 결정:
+  // - 한국어 모드: 한국어 그대로 (한국어 voice가 한국어 발음)
+  // - 영국 모드: 영어로 변환 (영국 남자 voice가 영어 발음)
+  let speechText;
+  if (opts.sayAs) {
+    speechText = opts.sayAs;
+  } else if (useKoreanMode) {
+    speechText = text;  // 한국어 그대로
+  } else {
+    speechText = jarvisifyForSpeech(text);  // 영어로 변환
+  }
 
   synth.cancel();
   const u = new SpeechSynthesisUtterance(speechText);
@@ -2162,16 +2175,12 @@ function unlockAudio() {
     log('AUDIO', '음성 시스템 활성화', 'success');
 
     setTimeout(() => {
-      // Paul Bettany 자비스의 명대사 풍 인사
-      const greet = new SpeechSynthesisUtterance(
-        "At your service, sir. All systems are online and functioning. 자비스 가동되었습니다, 보스."
-      );
+      // 모드별 첫 인사
+      const greetText = useKoreanMode
+        ? "안녕하십니까, 보스. 자비스 가동되었습니다. 모든 시스템 정상 작동 중입니다."
+        : "At your service, sir. All systems are online and functioning. 자비스 가동되었습니다, 보스.";
+      const greet = new SpeechSynthesisUtterance(greetText);
       applyJarvisVoice(greet);
-      // 인사말은 영어부터 시작이라 영국 voice 강제
-      if (pickedVoice) greet.voice = pickedVoice;
-      greet.lang = 'en-GB';
-      greet.pitch = 0.82;
-      greet.rate = 0.88;
       synth.speak(greet);
     }, 200);
   } catch (e) {
@@ -2187,53 +2196,71 @@ function unlockAudio() {
   }
 }
 
-// 자비스 같은 남자 보이스 선택 (영국 남성 절대 우선)
+// 자비스 같은 남자 보이스 선택 (영국 남성 우선, 없으면 한국어 voice)
+let pickedKoreanVoice = null;
+let useKoreanMode = false;  // 영국 voice 없으면 한국어 모드
+
 function refreshVoices() {
   if (!synth) return;
   const voices = synth.getVoices();
+  if (voices.length === 0) {
+    voiceStatus.textContent = 'voice 로딩';
+    return;
+  }
 
-  // 디버그: 사용 가능한 voice 목록 첫 회만 로그
-  if (!window._voicesLogged && voices.length > 0) {
+  // 모든 voice 첫 회만 로그
+  if (!window._voicesLogged) {
     window._voicesLogged = true;
-    log('TTS', `사용 가능 voice: ${voices.length}개`);
-    voices.slice(0, 8).forEach(v => {
-      log('TTS', `  · ${v.name} [${v.lang}]`);
+    log('TTS', `사용 가능 voice ${voices.length}개:`);
+    voices.forEach(v => {
+      log('TTS', `  · ${v.name} [${v.lang}]${v.localService ? ' (local)' : ''}`);
     });
   }
 
-  // 영화 자비스 = Paul Bettany 영국 남성. 한국어 voice는 절대 사용 안 함.
-  pickedVoice =
-    // 1. Google UK English Male (Android Chrome 기본 — 가장 자비스 같음)
-    voices.find(v => /google.*uk.*english.*male/i.test(v.name)) ||
-    voices.find(v => /google.*english.*\(uk\).*male/i.test(v.name)) ||
-    // 2. 영국 남성 명시
-    voices.find(v => /^en[-_]GB/i.test(v.lang) && /(daniel|george|oliver|james|arthur|harry|ryan|male)/i.test(v.name)) ||
-    // 3. Microsoft 영국 남성
-    voices.find(v => /microsoft.*(george|ryan|james|oliver)/i.test(v.name)) ||
-    // 4. en-GB 중 여성 제외
-    voices.find(v => /^en[-_]GB/i.test(v.lang) && !/female|samantha|moira|kate|serena|fiona|tessa|karen|veena|hazel|susan/i.test(v.name)) ||
-    // 5. 호주 남성
-    voices.find(v => /^en[-_]AU/i.test(v.lang) && /(male|lee|james|russell)/i.test(v.name)) ||
-    // 6. 미국 남성
-    voices.find(v => /^en[-_]US/i.test(v.lang) && /(alex|fred|mark|aaron|tom|david|reed|guy|bruce|male)/i.test(v.name)) ||
-    // 7. 어떤 영어 voice라도 (여성 제외)
-    voices.find(v => /^en/i.test(v.lang) && !/female|samantha|kate|karen|susan/i.test(v.name)) ||
-    voices[0];
+  // 한 번 잡으면 변경 안 함
+  if (pickedVoice && pickedVoice.name) return;
 
-  pickedKoreanVoice = voices.find(v => v.lang === 'ko-KR') || null;
+  // 영국 남성 voice 검색
+  const britishMale =
+    voices.find(v => /google.*uk.*english.*male/i.test(v.name)) ||
+    voices.find(v => /google.*uk.*male/i.test(v.name)) ||
+    voices.find(v => /uk.*english.*male/i.test(v.name)) ||
+    voices.find(v => /^en[-_]GB/i.test(v.lang) && /(daniel|george|oliver|james|arthur|harry|ryan|brian)/i.test(v.name)) ||
+    voices.find(v => /microsoft.*(george|ryan|james|oliver)/i.test(v.name)) ||
+    voices.find(v => /^en[-_]GB/i.test(v.lang) && !/female|samantha|moira|kate|serena|fiona|tessa|karen|veena|hazel|susan|amy|emily/i.test(v.name)) ||
+    voices.find(v => /^en[-_]US/i.test(v.lang) && /(alex|fred|mark|aaron|tom|david|reed|guy|bruce|matthew|justin|joey)/i.test(v.name));
+
+  // 한국어 voice 검색 (영국 voice 없을 때 폴백)
+  pickedKoreanVoice =
+    // 1. 한국어 남성 (드물지만 시도)
+    voices.find(v => v.lang.startsWith('ko') && /(male|sangjun|injeong|namhoon|seonbo|inseong|inho|minsu)/i.test(v.name)) ||
+    // 2. 한국어 voice (대부분 여성 — 톤 낮춰서 사용)
+    voices.find(v => v.lang === 'ko-KR') ||
+    voices.find(v => v.lang.startsWith('ko'));
+
+  // 영국 voice가 있으면 영국 모드, 없으면 한국어 모드
+  if (britishMale) {
+    pickedVoice = britishMale;
+    useKoreanMode = false;
+    log('TTS', `자비스 voice: ${pickedVoice.name} [${pickedVoice.lang}]`, 'success');
+    log('TTS', '✓ 영국 영어 모드 (Paul Bettany 톤)', 'success');
+  } else if (pickedKoreanVoice) {
+    pickedVoice = pickedKoreanVoice;
+    useKoreanMode = true;
+    log('TTS', `자비스 voice: ${pickedVoice.name} [${pickedVoice.lang}]`, 'success');
+    log('TTS', '✓ 한국어 모드 (낮은 톤으로 남성 흉내)', 'warn');
+    log('HINT', '진짜 영국 자비스 톤 원하시면: 폰 설정 → 일반 → 언어 및 입력 → 텍스트 음성 변환 → Google TTS → 언어: English (UK) 다운로드', 'warn');
+  } else {
+    pickedVoice = voices[0];
+    useKoreanMode = false;
+    log('TTS', `자비스 voice (폴백): ${pickedVoice.name}`, 'warn');
+  }
 
   if (pickedVoice) {
     const n = pickedVoice.name;
     voiceStatus.textContent = (n.length > 14 ? n.slice(0, 14) + '…' : n);
-    log('TTS', `자비스 voice 선택: ${pickedVoice.name} [${pickedVoice.lang}]`, 'success');
-  } else if (voices.length === 0) {
-    voiceStatus.textContent = 'voice 로딩';
-  } else {
-    voiceStatus.textContent = '영어 voice 없음';
   }
 }
-
-let pickedKoreanVoice = null;
 
 // 핵심: 한국어 메시지 → 영어 발화 매핑
 // 화면엔 한국어 그대로 보이고, 발화는 영국 남자 voice가 영어로
@@ -2248,6 +2275,8 @@ const SPEAK_EN = {
   '코드 생성 완료, 보스.': 'Code generated, sir.',
   '디비 분석 완료, 보스.': 'Database analysis complete, sir.',
   '저평가 후보 3종목, 보스.': 'Three undervalued candidates identified, sir.',
+  '스캐너 완료, 보스. 매집백 5시그널 후보 3종목 보고드립니다.': 'Scanner complete, sir. Three accumulation candidates from the five-signal analysis.',
+  '스캔 결과가 아직 없습니다, 보스.': 'Scan results are not yet available, sir.',
   '아이디어 정리 완료, 보스.': 'Ideas organized, sir.',
   '디버그 분석 완료, 보스.': 'Debug analysis complete, sir.',
   '검색 완료, 보스.': 'Search complete, sir.',
@@ -2317,7 +2346,7 @@ function jarvisifyForSpeech(text) {
   return text + ' Sir.';
 }
 
-// 영국 남자 voice 강제 — 한국어 voice 절대 사용 안 함
+// 자비스 voice 적용 — 영국 모드 또는 한국어 모드 자동 분기
 function applyJarvisVoice(u) {
   if (pickedVoice) {
     u.voice = pickedVoice;
@@ -2325,9 +2354,16 @@ function applyJarvisVoice(u) {
   } else {
     u.lang = 'en-GB';
   }
-  // Paul Bettany 톤 — 깊고 차분한 영국 신사
-  u.pitch = 0.78;
-  u.rate = 0.90;
+
+  if (useKoreanMode) {
+    // 한국어 모드 — 한국어 voice가 대부분 여성이므로 톤 최대한 낮춤
+    u.pitch = 0.5;   // 매우 낮게 (여성 → 남성 흉내 한계)
+    u.rate = 0.92;   // 약간 느리게 (자비스 분위기)
+  } else {
+    // 영국 모드 — Paul Bettany 톤 (낮고 차분한 신사)
+    u.pitch = 0.78;
+    u.rate = 0.90;
+  }
   u.volume = 1.0;
 }
 
@@ -2471,41 +2507,41 @@ $('#env-apply').addEventListener('click', () => {
 // ─── 인텐트 분류 (만능 비서 v3 — 13개 도메인) ───
 const INTENT_MAP = [
   // 📅 일상·시간 도메인
-  { intent: 'time_now',     kws: ['지금 몇시', '몇 시', '지금 시간', '현재 시간', '시간 좀'] },
-  { intent: 'date_today',   kws: ['오늘 며칠', '오늘 무슨 요일', '오늘 날짜', '며칠이야'] },
-  { intent: 'weather',      kws: ['날씨', '오늘 비', '내일 비', '기온', '온도', '미세먼지'] },
-  { intent: 'alarm_set',    kws: ['알람', '알람 맞춰', '깨워', '일어나게 해'] },
-  { intent: 'timer_set',    kws: ['타이머', '분 후', '초 후', '시간 재'] },
-  { intent: 'memo',         kws: ['메모', '적어둬', '기록해'] },
-  { intent: 'schedule',     kws: ['일정', '오늘 뭐 있', '내일 뭐', '미팅', '약속'] },
+  { intent: 'time_now',     kws: ['지금 몇시', '몇 시', '몇시', '지금 시간', '현재 시간', '시간 좀', '시간 알려', '시간이 어떻게'] },
+  { intent: 'date_today',   kws: ['오늘 며칠', '오늘 무슨 요일', '오늘 날짜', '며칠이야', '오늘 날', '오늘 무슨 날'] },
+  { intent: 'weather',      kws: ['날씨', '오늘 비', '내일 비', '기온', '온도', '미세먼지', '추워', '더워'] },
+  { intent: 'alarm_set',    kws: ['알람', '알람 맞춰', '깨워', '일어나게 해', '알람 설정'] },
+  { intent: 'timer_set',    kws: ['타이머', '분 후', '초 후', '시간 재', '시간 측정'] },
+  { intent: 'memo',         kws: ['메모', '적어둬', '기록해', '메모해', '저장해줘'] },
+  { intent: 'schedule',     kws: ['일정', '오늘 뭐 있', '내일 뭐', '미팅', '약속', '스케줄'] },
 
   // 💬 대화·일상 도메인
-  { intent: 'greeting',     kws: ['안녕', '하이', 'hello', 'hi', '굿모닝', '안녕하세요'] },
-  { intent: 'farewell',     kws: ['잘자', '굿나잇', '바이', 'bye', '잘 가', '내일 봐'] },
-  { intent: 'thanks',       kws: ['고마워', '땡큐', 'thanks', '감사'] },
-  { intent: 'joke',         kws: ['농담', '재밌는 얘기', '웃긴 얘기', '유머'] },
-  { intent: 'compliment',   kws: ['칭찬', '잘했어', '잘 해'] },
-  { intent: 'how_are_you',  kws: ['어때', '잘 있었', '뭐해'] },
+  { intent: 'greeting',     kws: ['안녕', '하이', 'hello', 'hi', '굿모닝', '안녕하세요', '반가워', '안녕히'] },
+  { intent: 'farewell',     kws: ['잘자', '굿나잇', '바이', 'bye', '잘 가', '내일 봐', '꺼져'] },
+  { intent: 'thanks',       kws: ['고마워', '땡큐', 'thanks', '감사', '고맙다'] },
+  { intent: 'joke',         kws: ['농담', '재밌는 얘기', '웃긴 얘기', '유머', '재밌는 거', '웃겨', '심심해'] },
+  { intent: 'compliment',   kws: ['칭찬', '잘했어', '잘 해', '잘했지', '대단해'] },
+  { intent: 'how_are_you',  kws: ['어때', '잘 있었', '뭐해', '잘 지내', '괜찮아', '기분'] },
 
   // 🔍 지식·정보 도메인
   { intent: 'web_search',   kws: ['검색', '찾아', '알려줘', '뭐야', '뭔가요', '설명해', '알아봐'] },
   { intent: 'wiki',         kws: ['위키', '백과사전', '에 대해'] },
   { intent: 'translate',    kws: ['번역', '영어로', '한국어로', '뜻이 뭐'] },
-  { intent: 'calculate',    kws: ['계산', '곱하기', '나누기', '더하기', '빼기', '얼마야', '몇이야'] },
+  { intent: 'calculate',    kws: ['계산', '곱하기', '나누기', '더하기', '빼기', '얼마야', '몇이야', '플러스', '마이너스'] },
   { intent: 'news',         kws: ['뉴스', '오늘 뉴스', '속보', '소식'] },
   { intent: 'define',       kws: ['뜻이', '정의', '의미가'] },
 
   // 🛠 창작·작업 도메인
   { intent: 'write_text',   kws: ['써줘', '글 써', '편지 써', '시 써', '작성', '초안'] },
   { intent: 'summarize',    kws: ['요약', '간추려', '정리해줘', '짧게'] },
-  { intent: 'idea',         kws: ['아이디어', '제안', '추천해', '뭐가 좋'] },
-  { intent: 'brainstorm',   kws: ['아이디어', '구상', '브레인스토밍', '설계'] },
-  { intent: 'code_help',    kws: ['코드', '디버그', '버그', '에러', '왜 안돼', '안 돌아'] },
+  { intent: 'brainstorm',   kws: ['브레인스토밍', '구상', '설계', '아이디어 좀'] },
+  { intent: 'idea',         kws: ['추천해', '뭐가 좋', '제안'] },
+  { intent: 'code_help',    kws: ['디버그', '버그', '에러', '왜 안돼', '안 돌아', '코드 도와'] },
 
   // 🏠 IoT·환경 도메인 (시뮬)
   { intent: 'lights',       kws: ['불 켜', '불 꺼', '조명', '라이트'] },
-  { intent: 'music_play',   kws: ['음악 틀', '노래 틀', '음악 켜', '플레이리스트'] },
-  { intent: 'music_stop',   kws: ['음악 꺼', '노래 꺼', '음악 멈춰', '소리 꺼'] },
+  { intent: 'music_play',   kws: ['음악 틀', '노래 틀', '음악 켜', '플레이리스트', '음악 재생'] },
+  { intent: 'music_stop',   kws: ['음악 꺼', '노래 꺼', '음악 멈춰', '소리 꺼', '음악 정지'] },
   { intent: 'volume',       kws: ['소리', '볼륨', '크게', '작게', '음량'] },
   { intent: 'tv_control',   kws: ['티비', 'TV', '텔레비전 켜', '텔레비전 꺼'] },
 
@@ -2529,18 +2565,28 @@ const INTENT_MAP = [
   { intent: 'market_query', kws: ['비트', '이더', '솔라나', '리플', '도지', 'btc', 'eth', '시세', '가격', '환율', '코스피'] },
   { intent: 'code_generate',kws: ['코드 짜', '코드 만들', '코드 생성', '구현해', '키움', 'okx', 'binance', '파인', '트레이딩 코드'] },
   { intent: 'db_analyze',   kws: ['디비', 'db', 'bsi', '거래 분석', '트레이드 분석'] },
-  { intent: 'csv_screen',   kws: ['저평가', '스크리닝', '종목 추천', '주식 추천'] },
+  { intent: 'csv_screen',   kws: ['저평가', '스크리닝', '종목 추천', '주식 추천', '매집백', '스캐너', '5시그널', '시그널 스캔', '매집 종목'] },
   { intent: 'self_heal',    kws: ['자가복구', '복구해', '직접 고쳐', 'heal'] },
   { intent: 'system_status',kws: ['상태 보고', '시스템 상태', '시스템 점검', '센서 상태'] },
 ];
 
 function classifyIntent(text) {
-  const t = (text || '').toLowerCase();
-  // 긴 키워드 우선 (더 구체적인 것)
+  if (!text) return null;
+  // 패치 INT-1: 공백 정규화 + 조사 약화로 변형 발화도 매칭
+  // "안녕해" → "안녕" 매칭, "몇 시 야" → "몇시" 매칭
+  const t = text.toLowerCase()
+    .replace(/[?!.,~]/g, '')        // 구두점 제거
+    .replace(/\s+/g, ' ')           // 공백 정규화
+    .trim();
+  const tNoSpace = t.replace(/\s/g, '');  // 공백 완전 제거 버전
+
   const matches = [];
   for (const e of INTENT_MAP) {
     for (const k of e.kws) {
-      if (t.includes(k.toLowerCase())) {
+      const kl = k.toLowerCase();
+      const klNoSpace = kl.replace(/\s/g, '');
+      // 일반 매칭 또는 공백 무시 매칭
+      if (t.includes(kl) || tNoSpace.includes(klNoSpace)) {
         matches.push({ intent: e.intent, len: k.length });
         break;
       }
@@ -2667,7 +2713,7 @@ function cmdToText(cmd) {
     'market': '비트 가격 알려줘',
     'generate': 'OKX ORB 코드 짜줘',
     'db': 'BSI DB 분석해',
-    'csv': '저평가 종목 추천해',
+    'csv': '매집백 스캐너 실행',
     'self-heal': '백테스트 자가복구',
     'clap': '👏👏',
     'bargein': '잠깐!',
@@ -2910,68 +2956,74 @@ function runTimer(text) {
 }
 
 // ━━━ 💬 대화 ━━━
-const GREETINGS = [
+// 보스에게 하는 인사 — 한국어 모드면 한국어 voice가 자연스럽게 발음
+function pickByMode(enResponses, krResponses) {
+  const arr = useKoreanMode ? krResponses : enResponses;
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+const GREETINGS_EN = [
   'Good day, sir. 오늘도 함께하게 되어 영광입니다.',
   'Welcome back, sir. 보고드릴 사항이 몇 가지 있습니다.',
   'At your service, 보스. 무엇을 도와드릴까요.',
   'Good to see you again, sir. 모든 시스템 정상입니다.',
   'Sir. 어떻게 도와드릴까요.',
 ];
+const GREETINGS_KR = [
+  '안녕하십니까, 보스. 오늘도 함께하게 되어 영광입니다.',
+  '돌아오셨군요, 보스. 보고드릴 사항이 몇 가지 있습니다.',
+  '대기 중이었습니다, 보스. 무엇을 도와드릴까요.',
+  '반갑습니다, 보스. 모든 시스템 정상 작동 중입니다.',
+  '예, 보스. 명령 대기 중입니다.',
+];
 function runGreeting() {
-  const g = GREETINGS[Math.floor(Math.random() * GREETINGS.length)];
-  speak(g);
+  speak(pickByMode(GREETINGS_EN, GREETINGS_KR));
 }
 
 function runFarewell() {
-  const r = [
-    'Good night, sir. 편안한 시간 되십시오.',
-    'Until next time, 보스.',
-    '편안한 시간 되십시오, 보스. 언제든 부르십시오.',
-  ];
-  speak(r[Math.floor(Math.random() * r.length)]);
+  speak(pickByMode(
+    ['Good night, sir. 편안한 시간 되십시오.', 'Until next time, 보스.', '편안한 시간 되십시오, 보스. 언제든 부르십시오.'],
+    ['편안한 시간 되십시오, 보스. 언제든 다시 부르십시오.', '안녕히 계십시오, 보스. 시스템은 항상 대기 중입니다.', '잠시 후에 뵙겠습니다, 보스.']
+  ));
 }
 
 function runThanks() {
-  const r = [
-    'My pleasure, sir.',
-    '천만에요, 보스. 그게 제 일입니다.',
-    "You're most welcome, 보스.",
-    '항상 기쁘게, 보스.',
-  ];
-  speak(r[Math.floor(Math.random() * r.length)]);
+  speak(pickByMode(
+    ['My pleasure, sir.', '천만에요, 보스. 그게 제 일입니다.', "You're most welcome, 보스.", '항상 기쁘게, 보스.'],
+    ['천만에요, 보스. 그게 제가 존재하는 이유입니다.', '도움이 되어 영광입니다, 보스.', '언제든 말씀하십시오, 보스.']
+  ));
 }
 
-const JOKES = [
+const JOKES_EN = [
   '프로그래머가 가장 무서워하는 단어는 "이상해, 내 컴퓨터에선 됐는데"입니다, 보스.',
   '오류 메시지를 검색하면 결과가 한 건 나옵니다. 본인이 작년에 올린 질문이죠, 보스.',
   '기계 학습이 어려운 이유는, 기계가 항상 학생이고 절대 졸업하지 않기 때문입니다, 보스.',
   '코드에 주석을 다는 것은 미래의 자기 자신에게 보내는 사과 편지입니다, 보스.',
-  'Sir, 진정한 백업이란 세 곳에 두 가지 매체로 한 카피는 외부에 보관하는 것이라고 들었습니다. 저는 그 정도는 아니니 안심하시죠.',
   'Sir, if I may — 사람들은 AI가 일자리를 빼앗을까 걱정하지만, 정작 저는 야근을 빼앗아드리려 노력 중입니다.',
 ];
+const JOKES_KR = [
+  '프로그래머가 가장 무서워하는 단어는, 이상해, 내 컴퓨터에선 됐는데, 입니다. 보스.',
+  '오류 메시지를 검색하면 결과가 한 건 나옵니다. 본인이 작년에 올린 질문이죠. 보스.',
+  '기계 학습이 어려운 이유는, 기계가 항상 학생이고 절대 졸업하지 않기 때문입니다. 보스.',
+  '코드에 주석을 다는 것은 미래의 자기 자신에게 보내는 사과 편지입니다. 보스.',
+  '제가 농담 하나 해드리죠. 사람들은 인공지능이 일자리를 빼앗을까 걱정하지만, 저는 보스의 야근만 빼앗아드리려 노력 중입니다.',
+];
 function runJoke() {
-  const j = JOKES[Math.floor(Math.random() * JOKES.length)];
-  speak(j);
+  speak(pickByMode(JOKES_EN, JOKES_KR));
 }
 
-const COMPLIMENTS = [
-  'Quite impressive, sir. 오늘도 보스의 결정은 매우 합리적이었습니다.',
-  'Well done, 보스. 어제보다 한 걸음 나아가셨군요.',
-  '그 판단은 정확했습니다, 보스. 평소처럼요.',
-  'As expected, sir. 흠잡을 데가 없습니다.',
-];
 function runCompliment() {
-  speak(COMPLIMENTS[Math.floor(Math.random() * COMPLIMENTS.length)]);
+  speak(pickByMode(
+    ['Quite impressive, sir. 오늘도 보스의 결정은 매우 합리적이었습니다.', 'Well done, 보스. 어제보다 한 걸음 나아가셨군요.', '그 판단은 정확했습니다, 보스. 평소처럼요.', 'As expected, sir. 흠잡을 데가 없습니다.'],
+    ['훌륭하십니다, 보스. 오늘도 합리적인 결정이었습니다.', '잘하셨습니다, 보스. 어제보다 한 걸음 나아가셨습니다.', '그 판단은 정확했습니다, 보스. 평소처럼 말입니다.', '예상대로입니다, 보스. 흠잡을 데가 없습니다.']
+  ));
 }
 
 function runHowAreYou() {
-  const r = [
-    'All systems nominal, sir. 그쪽은 어떠십니까.',
-    '시스템은 모두 정상입니다, 보스. 그쪽은 어떠십니까.',
-    '오늘도 보스를 보좌할 준비 완료입니다.',
-    "I'm functioning at peak capacity, sir. 보스를 보니 더더욱.",
-  ];
-  speak(r[Math.floor(Math.random() * r.length)]);
+  speak(pickByMode(
+    ['All systems nominal, sir. 그쪽은 어떠십니까.', '시스템은 모두 정상입니다, 보스. 그쪽은 어떠십니까.', '오늘도 보스를 보좌할 준비 완료입니다.', "I'm functioning at peak capacity, sir. 보스를 보니 더더욱."],
+    ['시스템은 모두 정상입니다, 보스. 그쪽은 어떠십니까.', '오늘도 보스를 보좌할 준비가 완료되어 있습니다.', '최상의 상태로 작동 중입니다, 보스. 보스께서는 어떠신지요.', '명령 대기 중이었습니다, 보스. 무엇이든 말씀하십시오.']
+  ));
 }
 
 // ━━━ 🔍 지식 ━━━
@@ -3428,38 +3480,102 @@ async function runDB() {
 
 // ━━━ CSV 스크리닝 ━━━
 async function runCSV() {
-  log('SKILL', 'csv_screen 라우팅');
-  log('CSV', '295종목 로드');
-  log('FILTER', 'BUY × 5/5 기준');
-  await sleep(700);
-  log('LLM', '오늘 시장 이슈 매칭 (반도체·2차전지)');
-  await sleep(700);
+  // ━━━ GitHub Actions 클라우드 스캔 결과 가져오기 ━━━
+  // 매일 KST 18:30에 GitHub Actions가 자동 스캔한 결과 fetch
+  log('SKILL', 'whale_scanner_cloud 라우팅', 'success');
+  log('SCAN', '클라우드 스캔 결과 조회 중...');
+  await sleep(400);
 
-  $('#cn-result').textContent = `# 저평가 종목 추천
+  const SCAN_URL = 'https://raw.githubusercontent.com/jungyeonherk/jarvis/main/docs/scan_result.json';
 
-전체 295 / BUY 87 / 5/5 충족 12
+  let data;
+  try {
+    log('FETCH', `GET ${SCAN_URL.split('/').slice(-2).join('/')}`);
+    // 캐시 우회 (timestamp 추가)
+    const r = await fetch(SCAN_URL + '?t=' + Date.now());
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    data = await r.json();
+    log('FETCH', `${data.total_scanned}종목 / ${data.candidates}후보 / TOP${data.top10.length}`, 'success');
+  } catch (e) {
+    log('FETCH', `클라우드 스캔 결과 없음: ${e.message}`, 'error');
+    log('HINT', 'GitHub Actions 첫 실행 대기 중 — 매일 KST 18:30 자동 스캔', 'warn');
 
-## 1. SK하이닉스 (000660)
-**📊** 현재가 184,500 | PER 7.2 | PBR 1.4 | ROE 18% | 목표 240,000 (+30%)
-**🔗** HBM3E 12단 양산 → 엔비디아 GB200 공급 본격화
-**🚀** 외국인 11일 순매수, 200일선 돌파, 60일선 GC 임박
+    // 폴백: 안내 메시지
+    $('#cn-result').textContent = `# 매집백 클라우드 스캐너
 
-## 2. 에코프로비엠 (247540)
-**📊** 78,200 | PER 12.4 | PBR 1.2 | ROE 11% | 목표 105,000 (+34%)
-**🔗** LG엔솔 NCM 공급 67% + IRA 5조 확보
-**🚀** RSI 30 → 52 회복, 단기 추세 전환
+## ⚠ 아직 스캔 결과가 없습니다
 
-## 3. 한미반도체 (042700)
-**📊** 95,800 | PER 9.8 | PBR 1.8 | ROE 16% | 목표 130,000 (+36%)
-**🔗** HBM TC 본더 글로벌 1위, SK·마이크론 동시 수주
-**🚀** 1,200억 신규 수주 공시, OPM 사상 최대`;
+GitHub Actions가 매일 **KST 18:30** (월~금)에 자동으로 전종목을 스캔합니다.
+
+### 첫 사용 시 셋업
+1. GitHub 저장소에 \`cloud_scanner.py\` 업로드
+2. \`.github/workflows/daily_scan.yml\` 업로드
+3. 키움 REST API 시크릿 등록 (선택, 1차 스캔만 해도 작동)
+4. 평일 18:30 후 자동 실행
+
+### 즉시 실행하기
+GitHub 저장소 → Actions 탭 → "🔎 매집백 일일 스캔" → "Run workflow" 클릭
+약 5~10분 후 자동으로 이 화면에 결과 표시됨.
+
+### 다음 자동 스캔
+평일 KST 18:30 (KRX 데이터 공개 직후)`;
+
+    $$('.console-tab').forEach(t => t.classList.remove('active'));
+    $$('.tab-content').forEach(c => c.classList.remove('active'));
+    $('[data-tab="result"]').classList.add('active');
+    $('[data-content="result"]').classList.add('active');
+    openModal('modal-console');
+    speak('스캔 결과가 아직 없습니다, 보스.');
+    return;
+  }
+
+  // 결과 표시
+  await sleep(400);
+  log('SCAN', `스캔 시각: ${data.scan_time_display}`);
+  await sleep(300);
+
+  let report = `# 매집백 TOP10 스캐너 — 클라우드 결과
+
+## 5시그널 체계
+① 공매도 감소  ② 조용한 상승  ③ 시간외 강세  ④ 기관 연속  ⑤ 외인 연속
+
+📅 스캔 시각: ${data.scan_time_display}
+📊 전체 ${data.total_scanned}종목 / 1+시그널 ${data.candidates} / TOP${data.top10.length}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+`;
+
+  data.top10.forEach((s, i) => {
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '⭐';
+    report += `## ${medal} ${i + 1}. ${s.name} (${s.code}) — ${s.score}점
+**테마**: ${s.theme || '기타'}
+**현재가**: ${s.cur_price.toLocaleString()}원${s.d3_change ? ` (3일 ${s.d3_change > 0 ? '+' : ''}${s.d3_change}%)` : ''}
+**시그널**: ${s.signals.join(', ') || '-'}
+${s.consec_rise ? `  연속 상승 ${s.consec_rise}일 / 조용한 거래량 ${s.quiet_days}일\n` : ''}${s.inst_days ? `  기관 ${s.inst_days}일 연속\n` : ''}${s.frgn_days ? `  외인 ${s.frgn_days}일 연속\n` : ''}
+`;
+  });
+
+  report += `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+## 다음 자동 스캔
+${data.next_run || '평일 KST 18:30'}
+
+## 💡 보스 참고
+- 5시그널 만점 = 매집 후 강력 신호
+- 3+ 시그널 = 1차 진입 후보
+- 결과는 GitHub Actions가 매일 자동 업데이트`;
+
+  $('#cn-result').textContent = report;
 
   $$('.console-tab').forEach(t => t.classList.remove('active'));
   $$('.tab-content').forEach(c => c.classList.remove('active'));
   $('[data-tab="result"]').classList.add('active');
   $('[data-content="result"]').classList.add('active');
   openModal('modal-console');
-  speak('저평가 후보 3종목, 보스.');
+
+  log('SCAN', `TOP${data.top10.length} 표시 완료`, 'success');
+  speak(`Scanner results retrieved, sir. Top ${data.top10.length} accumulation candidates from today's scan.`);
 }
 
 // ━━━ 브레인스토밍 ━━━
@@ -4283,7 +4399,9 @@ function attachRecognitionHandlers() {
       const text = final.trim();
       youLine.classList.remove('interim');
       log('STT', `"${text}"`, 'success');
-      if (!isProcessing) handleVoiceCommand(text);
+      // 패치 STT-1: 락업 무관하게 항상 처리 시도
+      // dispatch가 락업 자동 해제 + 새 명령 실행
+      handleVoiceCommand(text);
     }
   };
 
@@ -4292,13 +4410,37 @@ function attachRecognitionHandlers() {
     if (ev.error === 'not-allowed') {
       speak('마이크 권한이 필요합니다, 보스.');
       deactivateMic();
+    } else if (ev.error === 'network') {
+      // 패치 STT-3: network 에러는 인터넷 끊김 → 재시작 시도
+      log('STT', '네트워크 에러 — 3초 후 재시도', 'warn');
+      setTimeout(() => {
+        if (micActive && !recognitionActive && recognition) {
+          try { recognition.start(); recognitionActive = true; } catch (e) {}
+        }
+      }, 3000);
+    } else if (ev.error === 'no-speech' || ev.error === 'aborted') {
+      // 정상적으로 자동 재시작됨 (onend에서)
+    } else if (ev.error === 'audio-capture') {
+      log('STT', '마이크 사용 불가 — 다른 앱이 점유 중', 'error');
+      speak('마이크 사용 불가, 보스.');
     }
   };
 
   recognition.onend = () => {
-    // continuous라도 일부 브라우저는 60s마다 자동 종료 → 재시작
+    // 패치 STT-2: 즉시 재시작 대신 약간 지연 (InvalidStateError 방지)
     if (recognitionActive && micActive) {
-      try { recognition.start(); } catch (e) {}
+      setTimeout(() => {
+        if (recognitionActive && micActive && recognition) {
+          try {
+            recognition.start();
+          } catch (e) {
+            // 이미 시작된 상태면 무시
+            if (e.name !== 'InvalidStateError') {
+              log('STT', '재시작 실패: ' + e.message, 'warn');
+            }
+          }
+        }
+      }, 100);
     }
   };
 }
@@ -4353,6 +4495,15 @@ async function activateMic() {
     });
   } catch (e) {
     log('MIC', '권한 거부 또는 실패: ' + e.message, 'error');
+
+    // 사용자에게 영구 권한 설정 방법 안내
+    if (e.name === 'NotAllowedError') {
+      log('HINT', '권한 영구 저장:', 'warn');
+      log('HINT', '1. 주소창 좌측 🔒 자물쇠 탭', 'warn');
+      log('HINT', '2. 권한 → 마이크 → "허용"', 'warn');
+      log('HINT', '3. 또는 Chrome 메뉴 → 설정 → 사이트 설정 → 마이크', 'warn');
+    }
+
     speak('마이크 권한이 필요합니다, 보스.');
     $('#sensor-mic').classList.add('error');
     $('#sensor-mic-status').textContent = '권한 거부';
@@ -4558,32 +4709,41 @@ function flashClap() {
 
 function handleVoiceCommand(text) {
   setYou(text);
-  log('STT', `"${text}"`, 'success');
 
-  const intent = classifyIntent(text);
+  // 패치 INT-3: "자비스" 호출어 제거 (자비스, 안녕 → 안녕)
+  const cleaned = text.replace(/^(자비스|jarvis)[,\s]+/i, '').trim();
+  const queryText = cleaned || text;
+
+  const intent = classifyIntent(queryText);
   if (!intent) {
-    log('CLASSIFY', '의도 식별 실패: ' + text, 'warn');
+    log('CLASSIFY', '의도 식별 실패: ' + queryText, 'warn');
     speak('명령을 이해하지 못했습니다, 보스.');
     return;
   }
+
+  // 패치 LOCK-1: 락업 무관하게 즉시 처리 (강제 해제)
+  if (isProcessing) {
+    log('SYS', '이전 명령 강제 해제 → 새 명령 우선', 'warn');
+    isProcessing = false;
+    if (typeof stopTTS === 'function') stopTTS();
+  }
+
   setState('listening', 'TRANSCRIBING');
-  setTimeout(async () => {
-    // 락업 자동 해제 (30초 이상이면 강제로 풀고 새 명령 처리)
+  log('INTENT', `${intent} (${intentLabel(intent)})`, 'success');
+
+  // 즉시 실행 (setTimeout 없이)
+  isProcessing = true;
+  const lockTimer = setTimeout(() => {
     if (isProcessing) {
-      log('SYS', '이전 처리 강제 해제, 새 명령 우선', 'warn');
+      log('SYS', '30초 타임아웃 — 락업 해제', 'warn');
       isProcessing = false;
+      setState('idle');
     }
-    isProcessing = true;
-    const lockTimer = setTimeout(() => {
-      if (isProcessing) {
-        log('SYS', '30초 타임아웃 — 락업 해제', 'warn');
-        isProcessing = false;
-        setState('idle');
-      }
-    }, 30000);
+  }, 30000);
+
+  (async () => {
     try {
-      log('INTENT', `${intent} (${intentLabel(intent)})`, 'success');
-      await runPipeline(intent, text);
+      await runPipeline(intent, queryText);
     } catch (e) {
       log('SYS', '실행 오류: ' + e.message, 'error');
     } finally {
@@ -4591,7 +4751,7 @@ function handleVoiceCommand(text) {
       isProcessing = false;
       setState('idle');
     }
-  }, 200);
+  })();
 }
 
 $('#sensor-mic').addEventListener('click', activateMic);
@@ -4760,9 +4920,25 @@ async function bootSequence() {
     setTimeout(refreshVoices, 4000);
   }
   renderEnvSummary();
-  log('BOOT', 'JARVIS Mk II 가동', 'success');
+  log('BOOT', 'JARVIS Mk III v4.0 가동', 'success');
+
+  // 시스템 진단 (보스가 한눈에 환경 확인)
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  log('DIAG', `STT API: ${SR ? '✓ 지원' : '✗ 미지원 (Chrome 권장)'}`, SR ? 'success' : 'error');
+  log('DIAG', `TTS API: ${'speechSynthesis' in window ? '✓ 지원' : '✗ 미지원'}`, 'speechSynthesis' in window ? 'success' : 'error');
+  log('DIAG', `WebAudio: ${(window.AudioContext || window.webkitAudioContext) ? '✓ 지원' : '✗ 미지원'}`, 'success');
+  log('DIAG', `Mic API: ${navigator.mediaDevices ? '✓ 지원' : '✗ 미지원'}`, navigator.mediaDevices ? 'success' : 'error');
+
+  // 프로토콜 진단 (HTTPS 필수)
+  const proto = location.protocol;
+  if (proto === 'https:' || location.hostname === 'localhost') {
+    log('DIAG', `프로토콜: ${proto} ✓`, 'success');
+  } else {
+    log('DIAG', `프로토콜: ${proto} ⚠ 마이크/카메라 작동 안 함 (HTTPS 필요)`, 'error');
+  }
+
   log('ENV', `${env.broker} / ${env.os} / ${env.strategy} / ${env.mode}`);
-  log('READY', '명령 대기 중...');
+  log('READY', '명령 대기 중. 마이크 카드 탭하세요, 보스.');
 }
 
 bootSequence();
