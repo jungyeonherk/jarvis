@@ -1502,7 +1502,7 @@ header::before {
   <header>
     <div class="logo">
       <div class="logo-mark">J.A.R.V.I.S</div>
-      <div class="logo-tag">MK III · v5.0 한국어모드</div>
+      <div class="logo-tag">MK III · v6.0 STT수정</div>
     </div>
     <div class="hud-status">
       <div class="status-line">
@@ -4483,8 +4483,41 @@ async function activateMic() {
     deactivateMic();
     return;
   }
-  unlockAudio(); // TTS도 같이 unlock
+  unlockAudio();
 
+  // 핵심 변경: STT를 먼저 시작 (Android Chrome에서 마이크 우선권)
+  // STT가 자체적으로 마이크 잡게 두고, 우리는 박수/파형 감지만 별도
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    log('STT', 'SpeechRecognition API 미지원 — Chrome 권장', 'error');
+    speak('음성 인식 미지원, 보스.');
+    return;
+  }
+
+  // 1. STT 인스턴스 먼저 만들고 시작 (이게 마이크 잡음)
+  try {
+    recognition = new SR();
+    recognition.lang = 'ko-KR';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+    attachRecognitionHandlers();
+    recognition.start();
+    recognitionActive = true;
+    log('STT', '✓ SpeechRecognition 시작 (ko-KR)', 'success');
+  } catch (e) {
+    log('STT', 'STT 시작 실패: ' + e.message, 'error');
+    if (e.name === 'NotAllowedError') {
+      log('HINT', '권한: 주소창 🔒 자물쇠 → 마이크 허용', 'warn');
+      speak('마이크 권한이 필요합니다, 보스.');
+    }
+    $('#sensor-mic').classList.add('error');
+    $('#sensor-mic-status').textContent = '권한 거부';
+    return;
+  }
+
+  // 2. 별도 마이크 스트림 시도 (박수/파형 감지용)
+  // Android에서는 STT와 동시 사용이 어려울 수 있음 → 실패해도 STT는 작동
   try {
     micStream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -4493,57 +4526,28 @@ async function activateMic() {
         autoGainControl: true,
       }
     });
-  } catch (e) {
-    log('MIC', '권한 거부 또는 실패: ' + e.message, 'error');
+    log('MIC', '✓ 박수 감지용 마이크 스트림 획득', 'success');
 
-    // 사용자에게 영구 권한 설정 방법 안내
-    if (e.name === 'NotAllowedError') {
-      log('HINT', '권한 영구 저장:', 'warn');
-      log('HINT', '1. 주소창 좌측 🔒 자물쇠 탭', 'warn');
-      log('HINT', '2. 권한 → 마이크 → "허용"', 'warn');
-      log('HINT', '3. 또는 Chrome 메뉴 → 설정 → 사이트 설정 → 마이크', 'warn');
-    }
-
-    speak('마이크 권한이 필요합니다, 보스.');
-    $('#sensor-mic').classList.add('error');
-    $('#sensor-mic-status').textContent = '권한 거부';
-    return;
-  }
-
-  // AudioContext 셋업 (파형 + 박수 감지)
-  try {
-    micAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (micAudioCtx.state === 'suspended') await micAudioCtx.resume();
-    const source = micAudioCtx.createMediaStreamSource(micStream);
-    micAnalyser = micAudioCtx.createAnalyser();
-    micAnalyser.fftSize = 1024;
-    micAnalyser.smoothingTimeConstant = 0.4;
-    source.connect(micAnalyser);
-    micDataArray = new Uint8Array(micAnalyser.fftSize);
-  } catch (e) {
-    log('MIC', 'AudioContext 실패: ' + e.message, 'error');
-  }
-
-  // SpeechRecognition 셋업
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (SR) {
-    recognition = new SR();
-    recognition.lang = 'ko-KR';
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.maxAlternatives = 1;
-    attachRecognitionHandlers();
-
+    // AudioContext 셋업 (파형 + 박수 감지)
     try {
-      recognition.start();
-      recognitionActive = true;
-      log('STT', 'SpeechRecognition 시작 (ko-KR continuous)', 'success');
+      micAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (micAudioCtx.state === 'suspended') await micAudioCtx.resume();
+      const source = micAudioCtx.createMediaStreamSource(micStream);
+      micAnalyser = micAudioCtx.createAnalyser();
+      micAnalyser.fftSize = 1024;
+      micAnalyser.smoothingTimeConstant = 0.4;
+      source.connect(micAnalyser);
+      micDataArray = new Uint8Array(micAnalyser.fftSize);
     } catch (e) {
-      log('STT', 'start 실패: ' + e.message, 'warn');
+      log('MIC', 'AudioContext 실패 (STT만 작동): ' + e.message, 'warn');
     }
-  } else {
-    log('STT', 'SpeechRecognition API 미지원 (Chrome/Edge 권장)', 'warn');
+  } catch (e) {
+    // getUserMedia 실패해도 STT는 작동시킴
+    log('MIC', '박수 감지 비활성 (STT만 사용): ' + e.message, 'warn');
+    micStream = null;
   }
+
+  // STT는 이미 위에서 시작됨 (중복 시작 제거)
 
   micActive = true;
   $('#sensor-mic').classList.add('active', 'armed');
@@ -4555,10 +4559,10 @@ async function activateMic() {
   // 자비스 listening 사운드 (외부 또는 합성)
   playListening();
   speak('마이크 가동, 보스.');
-  log('SENSOR', '마이크 + 박수 감지 활성화', 'success');
+  log('SENSOR', `STT ${recognitionActive ? '✓' : '✗'} / 박수감지 ${micAnalyser ? '✓' : '✗'}`, 'success');
 
-  // 분석 루프 시작
-  analyzeMicLoop();
+  // 분석 루프 시작 (micAnalyser 있을 때만)
+  if (micAnalyser) analyzeMicLoop();
 }
 
 function deactivateMic() {
