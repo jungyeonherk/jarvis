@@ -1502,7 +1502,7 @@ header::before {
   <header>
     <div class="logo">
       <div class="logo-mark">J.A.R.V.I.S</div>
-      <div class="logo-tag">MK III · v6.0 STT수정</div>
+      <div class="logo-tag">MK III · v7.0 마이크충돌해결</div>
     </div>
     <div class="hud-status">
       <div class="status-line">
@@ -2130,25 +2130,13 @@ function speak(text, opts={}) {
   if (opts.rate) u.rate = opts.rate;
   if (opts.pitch) u.pitch = opts.pitch;
 
-  const wasRecognizing = recognitionActive && recognition;
-  if (wasRecognizing) {
-    try { recognition.stop(); recognitionActive = false; } catch (e) {}
-  }
+  // TTS 발화 중에 STT를 멈추지 않음 (echoCancellation으로 자비스 음성 자동 무시)
+  // 멈췄다 다시 시작하는 사이에 InvalidStateError가 발생해서 STT가 죽음
 
   u.onend = () => {
-    if (micActive && !recognitionActive && recognition) {
-      try { recognition.start(); recognitionActive = true; } catch (e) {
-        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (SR) {
-          recognition = new SR();
-          recognition.lang = 'ko-KR';
-          recognition.continuous = true;
-          recognition.interimResults = true;
-          attachRecognitionHandlers();
-          try { recognition.start(); recognitionActive = true; } catch (e2) {}
-        }
-      }
-    }
+    // TTS 끝났음. STT 재시작은 onend(STT)에서 자동 처리
+    // 여기서 직접 start() 호출하면 InvalidStateError 발생
+    log('TTS', '발화 완료', 'speak');
   };
   u.onerror = e => log('TTS', 'error: ' + (e.error || 'unknown'), 'error');
   synth.speak(u);
@@ -4398,9 +4386,14 @@ function attachRecognitionHandlers() {
     if (final) {
       const text = final.trim();
       youLine.classList.remove('interim');
+
+      // TTS 발화 중이면 자비스 자기 음성을 인식한 것일 수 있음 — 무시
+      if (synth && synth.speaking) {
+        log('STT', `(자비스 음성 필터) "${text}"`, 'warn');
+        return;
+      }
+
       log('STT', `"${text}"`, 'success');
-      // 패치 STT-1: 락업 무관하게 항상 처리 시도
-      // dispatch가 락업 자동 해제 + 새 명령 실행
       handleVoiceCommand(text);
     }
   };
@@ -4427,20 +4420,29 @@ function attachRecognitionHandlers() {
   };
 
   recognition.onend = () => {
-    // 패치 STT-2: 즉시 재시작 대신 약간 지연 (InvalidStateError 방지)
-    if (recognitionActive && micActive) {
+    log('STT', 'recognition 종료됨, 재시작 시도', 'warn');
+    // micActive면 무조건 재시작 (continuous 무한 유지)
+    if (micActive) {
       setTimeout(() => {
-        if (recognitionActive && micActive && recognition) {
+        if (micActive && recognition) {
           try {
             recognition.start();
+            recognitionActive = true;
+            log('STT', '✓ 재시작 성공', 'success');
           } catch (e) {
-            // 이미 시작된 상태면 무시
-            if (e.name !== 'InvalidStateError') {
-              log('STT', '재시작 실패: ' + e.message, 'warn');
+            // 이미 시작 상태면 OK
+            if (e.name === 'InvalidStateError') {
+              recognitionActive = true;
+              log('STT', '이미 활성 상태', 'success');
+            } else {
+              log('STT', '재시작 실패: ' + e.message, 'error');
+              recognitionActive = false;
             }
           }
         }
-      }, 100);
+      }, 300);
+    } else {
+      recognitionActive = false;
     }
   };
 }
