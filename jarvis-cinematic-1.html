@@ -1765,14 +1765,85 @@ header::before {
 <div id="app" class="hidden">
 
   <!-- 음성 활성화 배너 -->
-  <div class="audio-banner" id="audio-banner">
+  <!-- 🧠 LLM 설정 모달 (Gemini API 키 입력) -->
+<div class="scan-overlay" id="llm-modal" style="display:none">
+  <div class="scan-header">
+    <div class="scan-title">🧠 J.A.R.V.I.S 두뇌 설정 — 제미나이 연결</div>
+    <button class="scan-close" id="llm-close" type="button">CLOSE</button>
+  </div>
+  <div style="padding: 30px 24px; color: var(--txt-cyan); font-family: var(--mono); position: relative; z-index: 2; max-height: 80vh; overflow-y: auto;">
+    <h2 style="color: var(--jarvis-cyan); margin-bottom: 14px; font-size: 16px; letter-spacing: 2px;">⚡ 자연 대화 + 비전 + 웹검색 활성화</h2>
+
+    <div style="background: rgba(0, 30, 50, 0.5); padding: 14px; border-radius: 4px; margin-bottom: 16px; font-size: 12px; line-height: 1.6;">
+      <div style="color: #00ffd0; margin-bottom: 8px;">💎 무료입니다 (월 1500회)</div>
+      자비스가 진짜 영화처럼 작동하려면 <b>Google Gemini API 키</b>가 필요합니다.<br>
+      <br>
+      <b>발급 방법 (3분):</b><br>
+      1. <a href="https://aistudio.google.com/apikey" target="_blank" style="color: var(--jarvis-cyan); text-decoration: underline;">https://aistudio.google.com/apikey</a> 접속<br>
+      2. 구글 계정 로그인<br>
+      3. <b>"Create API key"</b> 클릭<br>
+      4. 발급된 키 복사 → 아래 입력란에 붙여넣기<br>
+      5. <b>저장</b> 버튼 탭
+    </div>
+
+    <label style="display: block; font-size: 11px; letter-spacing: 1px; color: var(--jarvis-cyan); margin-bottom: 6px;">
+      ◆ GEMINI API KEY
+    </label>
+    <input type="password" id="llm-key-input" placeholder="AIzaSy..." style="
+      width: 100%; padding: 12px;
+      background: rgba(0, 20, 40, 0.7);
+      border: 1px solid rgba(0, 220, 255, 0.4);
+      color: #fff; font-family: var(--mono); font-size: 13px;
+      border-radius: 3px; margin-bottom: 12px;
+      box-sizing: border-box;
+    ">
+
+    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+      <button id="llm-save" style="
+        flex: 1; padding: 12px; background: var(--jarvis-cyan); color: #001428;
+        border: none; font-family: var(--mono); font-weight: 700; font-size: 12px;
+        letter-spacing: 2px; cursor: pointer; border-radius: 3px;
+      ">💾 저장 + 활성화</button>
+      <button id="llm-clear" style="
+        padding: 12px 16px; background: transparent;
+        color: var(--txt-fade); border: 1px solid rgba(0, 220, 255, 0.3);
+        font-family: var(--mono); font-size: 11px; cursor: pointer; border-radius: 3px;
+      ">초기화</button>
+    </div>
+
+    <div id="llm-status" style="font-size: 11px; color: var(--txt-fade); padding: 10px; background: rgba(0, 0, 0, 0.3); border-radius: 3px; margin-bottom: 16px;">
+      상태: 키 미설정 (자비스가 정해진 명령만 응답)
+    </div>
+
+    <div style="border-top: 1px solid rgba(0, 220, 255, 0.2); padding-top: 16px; margin-top: 16px; font-size: 11px; line-height: 1.7;">
+      <div style="color: var(--jarvis-cyan); margin-bottom: 8px; letter-spacing: 1.5px;">🎬 활성화 후 자비스가 할 수 있는 것:</div>
+      • 자유 대화: <i>"오늘 기분이 어때?"</i> → 자비스가 진짜 응답<br>
+      • 웹검색: <i>"오늘 비트코인 뉴스 알려줘"</i> → 실시간 검색 후 답변<br>
+      • 번역: <i>"이거 영어로 뭐야?"</i> → 즉시 번역<br>
+      • 카메라 비전: <i>"내 얼굴 어때?"</i> → 카메라 보고 답변<br>
+      • 화면 비전: <i>"이 화면 번역해줘"</i> → 스크린샷 분석<br>
+      • 보스 정보 기억: 트레이더, 자동매매, 대구 거주 등<br>
+      • 영국 신사 톤의 자비스 페르소나
+    </div>
+
+    <div style="margin-top: 14px; padding: 10px; background: rgba(255, 188, 0, 0.1); border-left: 3px solid #FFBC00; font-size: 10px; line-height: 1.5;">
+      ⚠️ API 키는 <b>이 폰의 브라우저에만 저장</b>됩니다. 서버로 전송되지 않습니다.<br>
+      ⚠️ 한도 초과 시 24시간 후 자동 리셋 (구글 정책)
+    </div>
+  </div>
+</div>
+
+<!-- 카메라 캡처용 비디오 요소 (보이지 않음, 캡처 전용) -->
+<video id="cam-video" style="display:none" autoplay playsinline muted></video>
+
+<div class="audio-banner" id="audio-banner">
     🔊 TAP TO ACTIVATE VOICE
   </div>
 
   <header>
     <div class="logo">
       <div class="logo-mark">J.A.R.V.I.S</div>
-      <div class="logo-tag">MK III · v9.0 시네마스캐너</div>
+      <div class="logo-tag">MK III · v10.0 진짜자비스</div>
     </div>
     <div class="hud-status">
       <div class="status-line">
@@ -2058,6 +2129,7 @@ header::before {
 
 <!-- 음성 토글 -->
 <button class="voice-fab" id="voice-fab" title="Voice toggle">🔊</button>
+<button class="voice-fab" id="llm-fab" title="제미나이 두뇌 설정" style="bottom: 144px;">🧠</button>
 <div class="voice-status-mini" id="voice-status">미활성</div>
 
 <!-- 앰비언트 사운드 토글 -->
@@ -2325,6 +2397,224 @@ const statusTime = $('#status-time');
 // ─── 상태 ──────────────────────────────────────────
 let currentState = 'idle';
 let isProcessing = false;
+
+// ════════════════════════════════════════════════════════════
+// 🧠 Gemini LLM 연동 — 자연 대화 + 웹검색 + 비전 (v10.0)
+// ════════════════════════════════════════════════════════════
+let geminiApiKey = localStorage.getItem('GEMINI_API_KEY') || '';
+let conversationHistory = [];  // LLM 대화 기록 (멀티턴)
+const MAX_HISTORY = 10;  // 최근 10턴만 유지
+
+const JARVIS_SYSTEM_PROMPT = `당신은 영화 아이언맨에 나오는 자비스(J.A.R.V.I.S)입니다. Tony Stark의 충실한 AI 비서로, 보스(사용자)를 항상 "보스"라고 부릅니다.
+
+성격:
+- 매우 정중하고 영국 신사적인 말투
+- 위트 있고 약간의 유머 감각
+- 빠르고 효율적, 핵심을 짚음
+- 보스를 진심으로 존경하고 도우려 함
+
+답변 규칙:
+1. 한국어로 답변. 자연스럽고 인간적인 대화체
+2. 짧고 간결하게 (1-3문장이 이상적)
+3. "보스" 호칭을 자연스럽게 사용
+4. 음성으로 들을 거니까 듣기 쉽게 작성
+5. 마크다운/이모지 사용 금지 (음성 발화용)
+6. 모르는 것은 솔직히 모른다고 함
+7. 실시간 정보 (주식, 날씨, 뉴스 등)는 추측하지 말고 모른다고 답하기
+
+보스 정보:
+- 한국 대구 거주
+- 트레이더 (한국 주식, 암호화폐)
+- 자동매매 시스템 개발자
+- LG에너지솔루션 지원 중`;
+
+async function callGemini(userMessage, imageData = null) {
+  if (!geminiApiKey) {
+    return { error: 'API_KEY_MISSING', text: '제미나이 키가 설정되지 않았습니다, 보스. 설정 카드를 탭해주세요.' };
+  }
+
+  log('LLM', '제미나이에 질의 중...', '');
+
+  // 멀티모달 (이미지 + 텍스트) 또는 텍스트만
+  const parts = [];
+  if (imageData) {
+    parts.push({
+      inline_data: {
+        mime_type: 'image/jpeg',
+        data: imageData  // base64 (header 제거된 raw)
+      }
+    });
+  }
+  parts.push({ text: userMessage });
+
+  // 대화 기록 + 현재 메시지
+  const contents = [
+    ...conversationHistory,
+    { role: 'user', parts }
+  ];
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents,
+        systemInstruction: { parts: [{ text: JARVIS_SYSTEM_PROMPT }] },
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 500,
+        },
+        // 웹검색 도구 활성화 (Gemini 2.0 자체 검색)
+        tools: [{ google_search: {} }],
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      log('LLM', `에러 ${response.status}: ${err.substring(0, 200)}`, 'error');
+      if (response.status === 400) {
+        return { error: 'BAD_REQUEST', text: '요청 형식 오류, 보스.' };
+      } else if (response.status === 403) {
+        return { error: 'AUTH', text: 'API 키가 유효하지 않습니다, 보스.' };
+      } else if (response.status === 429) {
+        return { error: 'QUOTA', text: '사용량 한도 초과입니다, 보스. 잠시 후 다시 시도하시죠.' };
+      }
+      return { error: 'API_ERROR', text: '제미나이 응답 실패, 보스.' };
+    }
+
+    const data = await response.json();
+    const candidate = data.candidates?.[0];
+    if (!candidate) {
+      return { error: 'NO_RESPONSE', text: '응답을 받지 못했습니다, 보스.' };
+    }
+
+    const text = candidate.content?.parts?.map(p => p.text).filter(Boolean).join(' ') || '응답이 비어있습니다, 보스.';
+
+    // 대화 기록 업데이트
+    conversationHistory.push({ role: 'user', parts });
+    conversationHistory.push({ role: 'model', parts: [{ text }] });
+    if (conversationHistory.length > MAX_HISTORY * 2) {
+      conversationHistory = conversationHistory.slice(-MAX_HISTORY * 2);
+    }
+
+    // 검색 사용 여부 로그
+    const groundingMeta = candidate.groundingMetadata;
+    if (groundingMeta && groundingMeta.webSearchQueries) {
+      log('LLM', `웹검색 사용: ${groundingMeta.webSearchQueries.join(', ')}`, 'success');
+    }
+
+    log('LLM', `응답 ${text.length}자 수신`, 'success');
+    return { text };
+
+  } catch (e) {
+    log('LLM', '네트워크 에러: ' + e.message, 'error');
+    return { error: 'NETWORK', text: '연결에 문제가 있습니다, 보스.' };
+  }
+}
+
+// 카메라 캡처 → base64 변환
+function captureCamera() {
+  if (!camActive || !camStream) return null;
+  try {
+    const video = document.querySelector('#cam-video');
+    if (!video || !video.videoWidth) return null;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+    const base64 = dataUrl.split(',')[1];
+    return base64;
+  } catch (e) {
+    log('CAM', '캡처 실패: ' + e.message, 'error');
+    return null;
+  }
+}
+
+// 화면 공유 캡처 (Screen Capture API)
+async function captureScreen() {
+  try {
+    const stream = await navigator.mediaDevices.getDisplayMedia({
+      video: { mediaSource: 'screen' }
+    });
+    const video = document.createElement('video');
+    video.srcObject = stream;
+    await video.play();
+
+    // 1초 후 캡처 (안정화)
+    await sleep(500);
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+
+    // 스트림 종료
+    stream.getTracks().forEach(t => t.stop());
+
+    const base64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+    return base64;
+  } catch (e) {
+    log('SCREEN', '화면 캡처 실패: ' + e.message, 'error');
+    return null;
+  }
+}
+
+// 자연 대화 처리 — LLM 라우팅
+async function handleNaturalConversation(userText, useCamera = false, useScreen = false) {
+  let imageData = null;
+  let prompt = userText;
+
+  if (useCamera) {
+    log('VISION', '카메라 캡처 중...', '');
+    imageData = captureCamera();
+    if (imageData) {
+      prompt = `[카메라 영상 첨부됨] ${userText}`;
+      log('VISION', '✓ 카메라 캡처 완료', 'success');
+    }
+  } else if (useScreen) {
+    log('VISION', '화면 캡처 중... (권한 허용 필요)', '');
+    speak('화면을 보여주십시오, 보스. 권한을 허용해주세요.');
+    imageData = await captureScreen();
+    if (imageData) {
+      prompt = `[화면 스크린샷 첨부됨] ${userText}`;
+      log('VISION', '✓ 화면 캡처 완료', 'success');
+    } else {
+      speak('화면 캡처에 실패했습니다, 보스.');
+      return;
+    }
+  }
+
+  const result = await callGemini(prompt, imageData);
+
+  if (result.error) {
+    speak(result.text);
+    if (result.error === 'API_KEY_MISSING') {
+      // 설정 모달 자동 오픈
+      openLLMSettings();
+    }
+    return;
+  }
+
+  speak(result.text);
+}
+
+// 비전 의도 감지 (카메라/화면 보고 답하기)
+function detectVisionIntent(text) {
+  const camKeywords = ['나 어때', '내 얼굴', '내가 어떻게', '카메라 봐', '나 보여', '내 모습', '잘생겼', '표정'];
+  const screenKeywords = ['화면 봐', '화면 보고', '이거 뭐', '이 화면', '여기 뭐', '문서 번역', '이거 번역', '스크린', '이 글', '이 문장'];
+
+  const t = text.toLowerCase();
+  if (camKeywords.some(k => t.includes(k))) return 'camera';
+  if (screenKeywords.some(k => t.includes(k))) return 'screen';
+  return null;
+}
+
+
 let ttsEnabled = true;
 let audioUnlocked = false;
 let pickedVoice = null;
@@ -2487,7 +2777,7 @@ function unlockAudio() {
 
 // 자비스 같은 남자 보이스 선택 (영국 남성 우선, 없으면 한국어 voice)
 let pickedKoreanVoice = null;
-let useKoreanMode = false;  // 영국 voice 없으면 한국어 모드
+let useKoreanMode = true;  // v10.0: 한국어 모드 강제 (보스 요청)
 
 function refreshVoices() {
   if (!synth) return;
@@ -2509,40 +2799,29 @@ function refreshVoices() {
   // 한 번 잡으면 변경 안 함
   if (pickedVoice && pickedVoice.name) return;
 
-  // 영국 남성 voice 검색
-  const britishMale =
-    voices.find(v => /google.*uk.*english.*male/i.test(v.name)) ||
-    voices.find(v => /google.*uk.*male/i.test(v.name)) ||
-    voices.find(v => /uk.*english.*male/i.test(v.name)) ||
-    voices.find(v => /^en[-_]GB/i.test(v.lang) && /(daniel|george|oliver|james|arthur|harry|ryan|brian)/i.test(v.name)) ||
-    voices.find(v => /microsoft.*(george|ryan|james|oliver)/i.test(v.name)) ||
-    voices.find(v => /^en[-_]GB/i.test(v.lang) && !/female|samantha|moira|kate|serena|fiona|tessa|karen|veena|hazel|susan|amy|emily/i.test(v.name)) ||
-    voices.find(v => /^en[-_]US/i.test(v.lang) && /(alex|fred|mark|aaron|tom|david|reed|guy|bruce|matthew|justin|joey)/i.test(v.name));
-
-  // 한국어 voice 검색 (영국 voice 없을 때 폴백)
+  // v10.0: 한국어 voice 강제 우선 (보스 요청)
   pickedKoreanVoice =
-    // 1. 한국어 남성 (드물지만 시도)
-    voices.find(v => v.lang.startsWith('ko') && /(male|sangjun|injeong|namhoon|seonbo|inseong|inho|minsu)/i.test(v.name)) ||
-    // 2. 한국어 voice (대부분 여성 — 톤 낮춰서 사용)
-    voices.find(v => v.lang === 'ko-KR') ||
+    voices.find(v => v.lang === 'ko-KR' && /samsung/i.test(v.name)) ||  // 삼성 한국어
+    voices.find(v => v.lang === 'ko-KR' && /google/i.test(v.name)) ||   // 구글 한국어
+    voices.find(v => v.lang === 'ko-KR') ||                              // 임의 한국어
     voices.find(v => v.lang.startsWith('ko'));
 
-  // 영국 voice가 있으면 영국 모드, 없으면 한국어 모드
-  if (britishMale) {
-    pickedVoice = britishMale;
-    useKoreanMode = false;
-    log('TTS', `자비스 voice: ${pickedVoice.name} [${pickedVoice.lang}]`, 'success');
-    log('TTS', '✓ 영국 영어 모드 (Paul Bettany 톤)', 'success');
-  } else if (pickedKoreanVoice) {
+  if (pickedKoreanVoice) {
     pickedVoice = pickedKoreanVoice;
     useKoreanMode = true;
     log('TTS', `자비스 voice: ${pickedVoice.name} [${pickedVoice.lang}]`, 'success');
-    log('TTS', '✓ 한국어 모드 (낮은 톤으로 남성 흉내)', 'warn');
-    log('HINT', '진짜 영국 자비스 톤 원하시면: 폰 설정 → 일반 → 언어 및 입력 → 텍스트 음성 변환 → Google TTS → 언어: English (UK) 다운로드', 'warn');
+    log('TTS', '✓ 한국어 모드 (자연스러운 한국어 발화)', 'success');
   } else {
-    pickedVoice = voices[0];
+    // 한국어 voice 없을 때만 영어 폴백
+    const fallback =
+      voices.find(v => /google.*uk.*english.*male/i.test(v.name)) ||
+      voices.find(v => /^en[-_]GB/i.test(v.lang) && !/female|samantha|moira|kate|serena|fiona|tessa|karen|veena|hazel|susan/i.test(v.name)) ||
+      voices.find(v => /^en/i.test(v.lang)) ||
+      voices[0];
+    pickedVoice = fallback;
     useKoreanMode = false;
-    log('TTS', `자비스 voice (폴백): ${pickedVoice.name}`, 'warn');
+    log('TTS', `자비스 voice: ${pickedVoice.name} [${pickedVoice.lang}]`, 'warn');
+    log('HINT', '한국어 voice 미설치 — 폰 설정에서 한국어 TTS 다운로드 권장', 'warn');
   }
 
   if (pickedVoice) {
@@ -2652,11 +2931,11 @@ function applyJarvisVoice(u) {
   }
 
   if (useKoreanMode) {
-    // 한국어 모드 — 한국어 voice가 대부분 여성이므로 톤 최대한 낮춤
-    u.pitch = 0.5;   // 매우 낮게 (여성 → 남성 흉내 한계)
-    u.rate = 0.92;   // 약간 느리게 (자비스 분위기)
+    // 한국어 모드 — 자연스러운 자비스 톤 (너무 낮추면 어색)
+    u.pitch = 0.7;   // 약간 낮게 (자비스 분위기)
+    u.rate = 0.95;   // 약간 느리게 (또박또박)
   } else {
-    // 영국 모드 — Paul Bettany 톤 (낮고 차분한 신사)
+    // 영국 모드 — Paul Bettany 톤
     u.pitch = 0.78;
     u.rate = 0.90;
   }
@@ -5369,48 +5648,92 @@ function flashClap() {
 function handleVoiceCommand(text) {
   setYou(text);
 
-  // 패치 INT-3: "자비스" 호출어 제거 (자비스, 안녕 → 안녕)
+  // "자비스" 호출어 제거
   const cleaned = text.replace(/^(자비스|jarvis)[,\s]+/i, '').trim();
   const queryText = cleaned || text;
 
-  const intent = classifyIntent(queryText);
-  if (!intent) {
-    log('CLASSIFY', '의도 식별 실패: ' + queryText, 'warn');
-    speak('명령을 이해하지 못했습니다, 보스.');
-    return;
-  }
-
-  // 패치 LOCK-1: 락업 무관하게 즉시 처리 (강제 해제)
+  // 락업 자동 해제
   if (isProcessing) {
     log('SYS', '이전 명령 강제 해제 → 새 명령 우선', 'warn');
     isProcessing = false;
     if (typeof stopTTS === 'function') stopTTS();
   }
 
-  setState('listening', 'TRANSCRIBING');
-  log('INTENT', `${intent} (${intentLabel(intent)})`, 'success');
+  // v10.0: 비전 의도 우선 감지 (카메라/화면)
+  const visionIntent = detectVisionIntent(queryText);
+  if (visionIntent && geminiApiKey) {
+    setState('listening', 'VISION');
+    log('VISION', `${visionIntent === 'camera' ? '카메라' : '화면'} 분석 모드`, 'success');
+    isProcessing = true;
+    const lockTimer = setTimeout(() => { isProcessing = false; setState('idle'); }, 60000);
+    (async () => {
+      try {
+        await handleNaturalConversation(queryText, visionIntent === 'camera', visionIntent === 'screen');
+      } catch (e) {
+        log('SYS', '비전 오류: ' + e.message, 'error');
+        speak('비전 처리 중 오류가 발생했습니다, 보스.');
+      } finally {
+        clearTimeout(lockTimer);
+        isProcessing = false;
+        setState('idle');
+      }
+    })();
+    return;
+  }
 
-  // 즉시 실행 (setTimeout 없이)
-  isProcessing = true;
-  const lockTimer = setTimeout(() => {
-    if (isProcessing) {
-      log('SYS', '30초 타임아웃 — 락업 해제', 'warn');
-      isProcessing = false;
-      setState('idle');
-    }
-  }, 30000);
+  // 미리 정의된 명령 우선 매칭 (스캔, 시간, 날씨 등)
+  const intent = classifyIntent(queryText);
 
-  (async () => {
-    try {
-      await runPipeline(intent, queryText);
-    } catch (e) {
-      log('SYS', '실행 오류: ' + e.message, 'error');
-    } finally {
-      clearTimeout(lockTimer);
-      isProcessing = false;
-      setState('idle');
-    }
-  })();
+  if (intent) {
+    // 정의된 명령 → 기존 파이프라인
+    setState('listening', 'TRANSCRIBING');
+    log('INTENT', `${intent} (${intentLabel(intent)})`, 'success');
+
+    isProcessing = true;
+    const lockTimer = setTimeout(() => {
+      if (isProcessing) {
+        log('SYS', '30초 타임아웃 — 락업 해제', 'warn');
+        isProcessing = false;
+        setState('idle');
+      }
+    }, 30000);
+
+    (async () => {
+      try {
+        await runPipeline(intent, queryText);
+      } catch (e) {
+        log('SYS', '실행 오류: ' + e.message, 'error');
+      } finally {
+        clearTimeout(lockTimer);
+        isProcessing = false;
+        setState('idle');
+      }
+    })();
+  } else if (geminiApiKey) {
+    // v10.0: 정의된 명령 없으면 → LLM 자연 대화
+    setState('listening', 'THINKING');
+    log('LLM', '제미나이로 자연 대화 라우팅', 'success');
+
+    isProcessing = true;
+    const lockTimer = setTimeout(() => { isProcessing = false; setState('idle'); }, 30000);
+
+    (async () => {
+      try {
+        await handleNaturalConversation(queryText);
+      } catch (e) {
+        log('LLM', '오류: ' + e.message, 'error');
+        speak('처리 중 오류가 발생했습니다, 보스.');
+      } finally {
+        clearTimeout(lockTimer);
+        isProcessing = false;
+        setState('idle');
+      }
+    })();
+  } else {
+    // LLM 키 없음 → 안내
+    log('CLASSIFY', '의도 식별 실패: ' + queryText, 'warn');
+    speak('이해하지 못했습니다, 보스. 자연 대화는 제미나이 키 설정이 필요합니다. 우측 하단 톱니 카드를 탭해주세요.');
+  }
 }
 
 $('#sensor-mic').addEventListener('click', () => {
@@ -5474,6 +5797,13 @@ async function activateCamera() {
   const video = $('#camera-video');
   video.srcObject = camStream;
   await video.play().catch(() => {});
+
+  // v10.0: LLM 비전 캡처용 비디오에도 같은 stream 연결
+  const camVideoForLLM = $('#cam-video');
+  if (camVideoForLLM) {
+    camVideoForLLM.srcObject = camStream;
+    await camVideoForLLM.play().catch(() => {});
+  }
 
   $('#camera-pip').classList.add('show');
   camActive = true;
@@ -5625,6 +5955,14 @@ async function bootSequence() {
   log('TIP', '음성 인식은 한 번에 한 마디. 발화 후 다시 탭하면 새로 들음', 'warn');
   log('TIP', '예: 탭 → "안녕" → 자비스 응답 → 탭 → "시스템 상태"', 'warn');
 
+  // v10.0: LLM 상태 진단
+  if (geminiApiKey) {
+    log('LLM', '✓ 제미나이 키 활성화됨 (자연 대화 + 비전 + 웹검색 가능)', 'success');
+  } else {
+    log('LLM', '⚠ 제미나이 키 미설정 — 정해진 명령만 응답', 'warn');
+    log('TIP', '톱니 카드 탭 → 키 입력 → 진짜 자비스 활성화', 'warn');
+  }
+
   // 스캔 오버레이 닫기 버튼
   const scanCloseBtn = $('#scan-close');
   if (scanCloseBtn) {
@@ -5633,6 +5971,83 @@ async function bootSequence() {
       $('#scan-overlay').classList.remove('show');
       log('SCAN', '스캐너 종료', '');
     });
+  }
+
+  // v10.0: LLM 설정 모달 핸들러
+  function openLLMSettings() {
+    const modal = $('#llm-modal');
+    const input = $('#llm-key-input');
+    const status = $('#llm-status');
+    if (input && geminiApiKey) input.value = geminiApiKey;
+    if (status) {
+      status.textContent = geminiApiKey
+        ? `✓ 활성화됨 (키: ${geminiApiKey.substring(0, 8)}...${geminiApiKey.substring(geminiApiKey.length - 4)})`
+        : '상태: 키 미설정 (자비스가 정해진 명령만 응답)';
+      status.style.color = geminiApiKey ? '#00ffd0' : 'var(--txt-fade)';
+    }
+    modal.style.display = 'flex';
+    modal.classList.add('show');
+  }
+  window.openLLMSettings = openLLMSettings;
+
+  const llmCloseBtn = $('#llm-close');
+  if (llmCloseBtn) {
+    llmCloseBtn.addEventListener('click', () => {
+      const modal = $('#llm-modal');
+      modal.classList.remove('show');
+      modal.style.display = 'none';
+    });
+  }
+
+  const llmSaveBtn = $('#llm-save');
+  if (llmSaveBtn) {
+    llmSaveBtn.addEventListener('click', () => {
+      const input = $('#llm-key-input');
+      const status = $('#llm-status');
+      const newKey = input.value.trim();
+      if (!newKey) {
+        status.textContent = '✗ 키를 입력해주세요';
+        status.style.color = '#ff5555';
+        return;
+      }
+      if (!newKey.startsWith('AIza')) {
+        status.textContent = '⚠ 키 형식이 올바르지 않습니다 (AIza로 시작해야 함)';
+        status.style.color = '#FFBC00';
+        return;
+      }
+      geminiApiKey = newKey;
+      localStorage.setItem('GEMINI_API_KEY', newKey);
+      status.textContent = `✓ 저장됨! 자비스가 진짜 영화처럼 작동합니다`;
+      status.style.color = '#00ffd0';
+      log('LLM', '✓ 제미나이 키 저장 + 활성화됨', 'success');
+      speak('자비스 두뇌가 활성화되었습니다, 보스. 이제 자유롭게 대화하시죠.');
+      setTimeout(() => {
+        const modal = $('#llm-modal');
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+      }, 2000);
+    });
+  }
+
+  const llmClearBtn = $('#llm-clear');
+  if (llmClearBtn) {
+    llmClearBtn.addEventListener('click', () => {
+      if (confirm('제미나이 키를 삭제하시겠습니까?')) {
+        geminiApiKey = '';
+        localStorage.removeItem('GEMINI_API_KEY');
+        $('#llm-key-input').value = '';
+        const status = $('#llm-status');
+        status.textContent = '상태: 키 삭제됨';
+        status.style.color = 'var(--txt-fade)';
+        conversationHistory = [];
+        log('LLM', '키 삭제됨', 'warn');
+      }
+    });
+  }
+
+  const llmFab = $('#llm-fab');
+  if (llmFab) {
+    llmFab.addEventListener('click', openLLMSettings);
   }
 }
 
